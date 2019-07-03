@@ -48,6 +48,7 @@ namespace aero
 
       bool openPort(std::string _port, unsigned int _baud_rate);
       void closePort();
+      void flushPort();
       
       void onServo(uint8_t _number,uint16_t _data);
       std::vector<int16_t> getPosition(uint8_t _number);

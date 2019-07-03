@@ -77,6 +77,10 @@ void SerialCommunication::readBufferAsync(uint8_t _size=1, uint16_t _timeout=10)
   boost::asio::async_read(serial_,stream_buffer_,boost::asio::transfer_at_least(_size),
       boost::bind(&SerialCommunication::onReceive, this,
           boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
+
+  //transfer_all() -> read until full
+  //transfer_exactly(size_t size) -> read specific size
+  //transfer_at_least(size_t size) -> read at leaset size
   timer_.expires_from_now(boost::posix_time::milliseconds(_timeout));
   timer_.async_wait(boost::bind(&SerialCommunication::onTimer, this, _1));
   io_.reset();
@@ -132,6 +136,10 @@ bool AeroCommand::openPort(std::string _port, unsigned int _baud_rate){
 void AeroCommand::closePort(){
   serial_com_.closePort();
   is_open_ = false;
+}
+
+void AeroCommand::flushPort(){
+  serial_com_.flushPort();
 }
 
 ///////////////////////////////
