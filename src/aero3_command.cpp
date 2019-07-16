@@ -143,25 +143,35 @@ void AeroCommand::flushPort(){
 }
 
 ///////////////////////////////
-/*
-void AeroCommand::setJointStates(std::vector<uint8_t> _data)
+void AeroCommand::setCurrent(uint8_t _number,uint8_t _max, uint8_t _down)
 {
-  for(int i=0; i < 30 ; ++i){
-    joint_states_["j"+i] = static_cast<int16_t>((_data[i*2+5] << 8) + _data[i*2+6]);
+  check_sum_ = 0;
+
+  if(_number == 0)length_ = 68;
+  else length_ = 8;
+
+  send_data_.resize(length_);
+  fill(send_data_.begin(),send_data_.end(),0);
+
+  send_data_[0] = 0xFD;
+  send_data_[1] = 0xDF;
+  send_data_[2] = length_-4;
+  send_data_[3] = 0x01;
+  send_data_[4] = _number;
+
+  for(unsigned int i = 0;i < (length_-6)/2; ++i){
+    send_data_[i*2+5] = _max;
+    send_data_[i*2+6] = _down;
   }
 
-  joint_states_["robot_status"] = static_cast<int16_t>((_data[65] << 8) + _data[66]);
-}
+  //CheckSum
+  for(count_ = 2;count_ < length_-1;count_++) check_sum_ += send_data_[count_];
+  send_data_[length_-1] = ~check_sum_;
 
-///////////////////////////////
-void AeroCommand::sendAngleVector(uint16_t _time)
-{
-  for(int i=0; i < 30 ; ++i){
-    joint_angle_[i] = angle_vector_["j"+i];
-  }
-  sendPosition(_time,joint_angle_.data());
+  serial_com_.flushPort();
+  serial_com_.writeAsync(send_data_);
+
 }
-*/
 
 ///////////////////////////////
 void AeroCommand::onServo(uint8_t _number,uint16_t _data)
