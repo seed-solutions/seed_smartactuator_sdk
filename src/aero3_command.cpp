@@ -190,7 +190,10 @@ void AeroCommand::onServo(uint8_t _number,uint16_t _data)
   send_data_[3] = 0x21;
   send_data_[4] = _number;
 
-  for(unsigned int i = 0;i < (length_-6)/2; ++i) send_data_[i*2+6] = _data;
+  for(unsigned int i = 0;i < (length_-6)/2; ++i){
+    send_data_[i*2+5] = _data >> 8;
+    send_data_[i*2+6] = _data;
+  }
 
   //CheckSum
   for(count_ = 2;count_ < length_-1;count_++) check_sum_ += send_data_[count_];
@@ -323,7 +326,7 @@ std::vector<int16_t> AeroCommand::actuateByPosition(uint16_t _time, int16_t *_da
   parse_data.resize(31);
   fill(parse_data.begin(),parse_data.end(),0);
   for(size_t i=0; i < parse_data.size() ; ++i){
-    parse_data[i] = static_cast<uint16_t>((receive_data[i*2+5] << 8) + receive_data[i*2+6]);
+    parse_data[i] = static_cast<int16_t>((receive_data[i*2+5] << 8) + receive_data[i*2+6]);
   }
 
   return parse_data;
@@ -367,7 +370,7 @@ std::vector<int16_t> AeroCommand::actuateBySpeed(int16_t *_data)
   parse_data.resize(31);
   fill(parse_data.begin(),parse_data.end(),0);
   for(size_t i=0; i < parse_data.size() ; ++i){
-    parse_data[i] = static_cast<uint16_t>((receive_data[i*2+5] << 8) + receive_data[i*2+6]);
+    parse_data[i] = static_cast<int16_t>((receive_data[i*2+5] << 8) + receive_data[i*2+6]);
   }
 
   return parse_data;
