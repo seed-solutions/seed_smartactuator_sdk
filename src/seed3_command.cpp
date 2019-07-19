@@ -1,4 +1,5 @@
 #include "seed_solutions_sdk/seed3_command.h"
+#include <iostream> // for cout/cerr
 using namespace seed;
 using namespace controller;
 

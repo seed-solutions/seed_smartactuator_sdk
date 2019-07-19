@@ -40,3 +40,14 @@ add_library(seed_solutions_sdk
   )
 target_link_libraries(seed_solutions_sdk ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 add_dependencies(seed_solutions_sdk ${catkin_EXPORTED_TARGETS})
+
+install(TARGETS seed_solutions_sdk
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(DIRECTORY include/${PROJECT_NAME}/
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+)
+
