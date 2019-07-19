@@ -1,4 +1,5 @@
 #include "seed_solutions_sdk/aero3_command.h"
+#include <iostream> // for cout/cerr
 using namespace aero;
 using namespace controller;
 
