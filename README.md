@@ -1,4 +1,4 @@
-# seed_solutions_sdk
+# seed_smartactuator_sdk
 
 ## サンプルコード
 ROS上のパッケージから本ライブラリをインクルードし、SEED-Driverへコマンドを送信するための一連サンプルを示す。    
