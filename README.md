@@ -11,7 +11,7 @@ ROS上のパッケージから本ライブラリをインクルードし、SEED-
 ### C++
 ```c++
 #include <ros/ros.h>
-#include "seed_smartactuator_sdk_sdk/seed3_command.h"
+#include "seed_smartactuator_sdk/seed3_command.h"
 
 int main(int argc, char **argv)
 {
