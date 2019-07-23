@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(seed_solutions_sdk)
+project(seed_smartactuator_sdk)
 
 find_package(catkin REQUIRED COMPONENTS)
 
@@ -27,21 +27,21 @@ endif()
 
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES seed_solutions_sdk
+  LIBRARIES seed_smartactuator_sdk
 )
 
 catkin_python_setup()
 
 include_directories(  ${catkin_INCLUDE_DIRS})
 
-add_library(seed_solutions_sdk
+add_library(seed_smartactuator_sdk
   src/seed3_command.cpp
   src/aero3_command.cpp
   )
-target_link_libraries(seed_solutions_sdk ${catkin_LIBRARIES} ${Boost_LIBRARIES})
-add_dependencies(seed_solutions_sdk ${catkin_EXPORTED_TARGETS})
+target_link_libraries(seed_smartactuator_sdk ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+add_dependencies(seed_smartactuator_sdk ${catkin_EXPORTED_TARGETS})
 
-install(TARGETS seed_solutions_sdk
+install(TARGETS seed_smartactuator_sdk
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

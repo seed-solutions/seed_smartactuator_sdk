@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>seed_solutions_sdk</name>
+  <name>seed_smartactuator_sdk</name>
   <version>0.0.1</version>
-  <description>The seed_solutions_sdk package</description>
+  <description>The seed_smartactuator_sdk package</description>
   <maintainer email="y.shiigi@thk.co.jp">Yasuto Shiigi</maintainer>
   <license>BSD</license>
 
