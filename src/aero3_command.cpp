@@ -287,6 +287,44 @@ std::vector<uint16_t> AeroCommand::getTemperatureVoltage(uint8_t _number)
 }
 
 ///////////////////////////////
+std::string AeroCommand::getVersion(uint8_t _number)
+{
+  check_sum_ = 0;
+  length_ = 6;
+
+  send_data_.resize(length_);
+  fill(send_data_.begin(),send_data_.end(),0);
+
+  send_data_[0] = 0xFD;
+  send_data_[1] = 0xDF;
+  send_data_[2] = length_-4;
+  send_data_[3] = 0x51;
+  send_data_[4] = _number;
+
+  //CheckSum
+  for(count_ = 2;count_ < length_-1;count_++) check_sum_ += send_data_[count_];
+  send_data_[length_-1] = ~check_sum_;
+
+  serial_com_.flushPort();
+  serial_com_.writeAsync(send_data_);
+
+  std::vector<uint8_t> receive_data;
+  receive_data.resize(11);
+  fill(receive_data.begin(),receive_data.end(),0);
+
+  serial_com_.readBuffer(receive_data,receive_data.size());
+
+  std::string version = "";
+  char data[2];
+  for(size_t i=0; i < 5 ; ++i){
+    sprintf(data,"%02X", receive_data[i+5]);
+    version += data;
+  }
+
+  return version;
+}
+
+///////////////////////////////
 std::vector<uint16_t> AeroCommand::getStatus(uint8_t _number)
 {
   check_sum_ = 0;
