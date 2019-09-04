@@ -315,7 +315,7 @@ std::string AeroCommand::getVersion(uint8_t _number)
   serial_com_.readBuffer(receive_data,receive_data.size());
 
   std::string version = "";
-  char data[2];
+  char data[3];
   for(size_t i=0; i < 5 ; ++i){
     sprintf(data,"%02X", receive_data[i+5]);
     version += data;
