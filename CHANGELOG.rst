@@ -1,7 +1,10 @@
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Changelog for package seed_smartactuator_sdk
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
+0.0.3 (2019-08-09)
+* Merge pull request '#7 <https://github.com/seed-solutions/seed_smartactuator_sdk/issues/7>`_ from y-shiigi/master
+* add getTemperatureVoltage()
+* add getVersion()
 0.0.2 (2019-07-24)
 ------------------
 * Merge pull request `#6 <https://github.com/seed-solutions/seed_smartactuator_sdk/issues/6>`_ from seed-solutions/development
