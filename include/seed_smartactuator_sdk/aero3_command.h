@@ -53,9 +53,12 @@ namespace aero
       void setCurrent(uint8_t _number,uint8_t _max, uint8_t _down);
       void onServo(uint8_t _number,uint16_t _data);
       std::vector<int16_t> getPosition(uint8_t _number);
+      std::vector<uint16_t> getCurrent(uint8_t _number);
       std::vector<uint16_t> getTemperatureVoltage(uint8_t _number);
       std::string getVersion(uint8_t _number);
       std::vector<uint16_t> getStatus(uint8_t _number);
+      void throughCAN(uint8_t _send_no,uint8_t _command,
+        uint8_t _data1, uint8_t _data2, uint8_t _data3, uint8_t _data4, uint8_t _data5);
       std::vector<int16_t> actuateByPosition(uint16_t _time, int16_t *_data);
       std::vector<int16_t> actuateBySpeed(int16_t *_data);
       void runScript(uint8_t _number,uint16_t _data);
