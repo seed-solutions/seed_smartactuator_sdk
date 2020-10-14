@@ -28,6 +28,7 @@ namespace aero
       void flushPort();
 
       std::string receive_buffer_;
+      bool comm_err_;
 
     private:
       io_service io_;
@@ -44,12 +45,12 @@ namespace aero
       AeroCommand();
       ~AeroCommand();
 
-      bool is_open_;
+      bool is_open_,comm_err_;
 
       bool openPort(std::string _port, unsigned int _baud_rate);
       void closePort();
       void flushPort();
-      
+
       void setCurrent(uint8_t _number,uint8_t _max, uint8_t _down);
       void onServo(uint8_t _number,uint16_t _data);
       std::vector<int16_t> getPosition(uint8_t _number);

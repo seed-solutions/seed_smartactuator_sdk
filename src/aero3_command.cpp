@@ -7,7 +7,7 @@ using namespace controller;
 
 ///////////////////////////////
 SerialCommunication::SerialCommunication()
-: io_(),serial_(io_),timer_(io_),is_canceled_(false)
+: io_(),serial_(io_),timer_(io_),is_canceled_(false),comm_err_(false)
 {
 }
 
@@ -99,9 +99,11 @@ void SerialCommunication::readBuffer(std::vector<uint8_t>& _receive_data, uint8_
 
   if(receive_buffer_.size() < _length){
     std::cerr << "Read Timeout" << std::endl;
+    comm_err_ = true;
   }
   else{
     for(size_t i=0;i<_length;++i)_receive_data[i] = receive_buffer_[i];
+    comm_err_ = false;
   }
 
 }
@@ -234,6 +236,7 @@ std::vector<int16_t> AeroCommand::getPosition(uint8_t _number)
   fill(receive_data.begin(),receive_data.end(),0);
 
   serial_com_.readBuffer(receive_data,receive_data.size());
+  comm_err_ = serial_com_.comm_err_;
   std::vector<int16_t> parse_data;
   if(_number==0) parse_data.resize(30);
   else parse_data.resize(1);
@@ -274,6 +277,7 @@ std::vector<uint16_t> AeroCommand::getCurrent(uint8_t _number)
   fill(receive_data.begin(),receive_data.end(),0);
 
   serial_com_.readBuffer(receive_data,receive_data.size());
+  comm_err_ = serial_com_.comm_err_;
   std::vector<uint16_t> parse_data;
   if(_number==0) parse_data.resize(31);
   else parse_data.resize(1);
@@ -314,6 +318,7 @@ std::vector<uint16_t> AeroCommand::getTemperatureVoltage(uint8_t _number)
   fill(receive_data.begin(),receive_data.end(),0);
 
   serial_com_.readBuffer(receive_data,receive_data.size());
+  comm_err_ = serial_com_.comm_err_;
   std::vector<uint16_t> parse_data;
   if(_number==0) parse_data.resize(31);
   else parse_data.resize(1);
@@ -353,6 +358,7 @@ std::string AeroCommand::getVersion(uint8_t _number)
   fill(receive_data.begin(),receive_data.end(),0);
 
   serial_com_.readBuffer(receive_data,receive_data.size());
+  comm_err_ = serial_com_.comm_err_;
 
   std::string version = "";
   char data[3];
@@ -392,6 +398,7 @@ std::vector<uint16_t> AeroCommand::getStatus(uint8_t _number)
   fill(receive_data.begin(),receive_data.end(),0);
 
   serial_com_.readBuffer(receive_data,receive_data.size());
+  comm_err_ = serial_com_.comm_err_;
 
   std::vector<uint16_t> parse_data;    //status data
   if(_number==0) parse_data.resize(31);
@@ -471,6 +478,7 @@ std::vector<int16_t> AeroCommand::actuateByPosition(uint16_t _time, int16_t *_da
   fill(receive_data.begin(),receive_data.end(),0);
 
   serial_com_.readBuffer(receive_data,receive_data.size());
+  comm_err_ = serial_com_.comm_err_;
 
   std::vector<int16_t> parse_data;    //present position & robot status
   parse_data.resize(31);
@@ -478,7 +486,6 @@ std::vector<int16_t> AeroCommand::actuateByPosition(uint16_t _time, int16_t *_da
   for(size_t i=0; i < parse_data.size() ; ++i){
     parse_data[i] = static_cast<int16_t>((receive_data[i*2+5] << 8) + receive_data[i*2+6]);
   }
-
   return parse_data;
 
 }
@@ -515,6 +522,7 @@ std::vector<int16_t> AeroCommand::actuateBySpeed(int16_t *_data)
   fill(receive_data.begin(),receive_data.end(),0);
 
   serial_com_.readBuffer(receive_data,receive_data.size());
+  comm_err_ = serial_com_.comm_err_;
 
   std::vector<int16_t> parse_data;    //present position & robot status
   parse_data.resize(31);
