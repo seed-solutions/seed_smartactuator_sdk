@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>seed_smartactuator_sdk</name>
-  <version>0.0.4</version>
+  <version>0.0.5</version>
   <description>The seed_smartactuator_sdk package</description>
   <maintainer email="y.shiigi@thk.co.jp">Yasuto Shiigi</maintainer>
   
