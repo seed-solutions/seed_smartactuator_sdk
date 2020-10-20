@@ -18,7 +18,7 @@ else()
 endif()
 
 # add boost dependencies :
-find_package(Boost REQUIRED COMPONENTS filesystem system signals thread)
+find_package(Boost REQUIRED COMPONENTS filesystem system thread)
 if(NOT Boost_INCLUDE_DIRS)
   message(FATAL "boost required but not supported")
 else()
