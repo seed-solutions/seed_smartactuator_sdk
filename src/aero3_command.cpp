@@ -1,4 +1,5 @@
 #include "seed_smartactuator_sdk/aero3_command.h"
+
 #include <iostream> // for cout/cerr
 using namespace aero;
 using namespace controller;
@@ -7,7 +8,7 @@ using namespace controller;
 
 ///////////////////////////////
 SerialCommunication::SerialCommunication()
-: io_(),serial_(io_),timer_(io_),is_canceled_(false),comm_err_(false)
+: io_(),serial_(io_),timer_(io_),is_canceled_(false),comm_err_(false),cosmo_receiver_(&cosmo_cmd_queue)
 {
 }
 
@@ -95,7 +96,9 @@ void SerialCommunication::readBuffer(std::vector<uint8_t>& _receive_data, uint8_
   _receive_data.resize(_length);
   fill(_receive_data.begin(),_receive_data.end(),0);
 
-  readBufferAsync( _length, 1000);
+    do {
+        readBufferAsync(_length, 1000);
+    } while (cosmo_receiver_((MsRecvRaw*)receive_buffer_.c_str()));
 
   if(receive_buffer_.size() < _length){
     std::cerr << "Read Timeout" << std::endl;

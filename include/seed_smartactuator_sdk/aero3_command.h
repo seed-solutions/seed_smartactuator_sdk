@@ -6,6 +6,8 @@
 #include <vector>
 #include <unordered_map>
 
+#include "seed_smartactuator_sdk/cosmo_receiver.h"
+
 using namespace boost::asio;
 
 namespace aero
@@ -29,12 +31,13 @@ namespace aero
 
       std::string receive_buffer_;
       bool comm_err_;
+      CosmoCmdQueue cosmo_cmd_queue;
 
     private:
       io_service io_;
       serial_port serial_;
       deadline_timer timer_;
-
+      CosmoReceiver cosmo_receiver_;
       bool is_canceled_;
       boost::asio::streambuf stream_buffer_;
 
@@ -63,6 +66,10 @@ namespace aero
       std::vector<int16_t> actuateByPosition(uint16_t _time, int16_t *_data);
       std::vector<int16_t> actuateBySpeed(int16_t *_data);
       void runScript(uint8_t _number,uint16_t _data);
+
+      std::string getCosmoCmd(){
+          return serial_com_.cosmo_cmd_queue.dequeue();
+      }
 
     private:
       //Value
