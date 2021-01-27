@@ -14,6 +14,8 @@ namespace aero
 {
   namespace controller
   {
+
+
     class SerialCommunication
     {
     public:
@@ -23,7 +25,6 @@ namespace aero
       bool openPort(std::string _port, unsigned int _baud_rate);
       void closePort();
       void writeAsync(std::vector<uint8_t>& _send_data);
-      void writeCosmoAsync(MsRecvRaw& _cosmo_data);
       void onReceive(const boost::system::error_code& _error, size_t _bytes_transferred);
       void onTimer(const boost::system::error_code& _error);
       void readBufferAsync(uint8_t _size, uint16_t _timeout);
@@ -68,32 +69,36 @@ namespace aero
       std::vector<int16_t> actuateBySpeed(int16_t *_data);
       void runScript(uint8_t _number,uint16_t _data);
 
-      std::string getCosmoCmd(){
+      std::pair<int,std::string> getCosmoCmd(){
           return serial_com_.cosmo_cmd_queue.dequeue();
       }
 
-      void sendCosmoCmd(std::string _cmd){
+      void sendCosmoCmdResp(int msid,std::string _cmd){
+          check_sum_ = 0;
+          length_ = 64;
 
-          cosmo_length_ = 68;
-          std::vector<uint8_t> cmdVector(_cmd.begin(), _cmd.end());
+          send_data_.resize(length_);
+          fill(send_data_.begin(),send_data_.end(),0);
 
-          cosmo_data_.header[0] = 0xFA;
-          cosmo_data_.header[1] = 0xAF;
-          cosmo_data_.len = 62;
-          cosmo_data_.cmd = 0xA1;
-          *cosmo_data_.data = cmdVector[0];
-          //BlackChannelについては今後実装する
-          cosmo_data_.opt = 0;
+          send_data_[0] = 0xFA;
+          send_data_[1] = 0xAF;
+          send_data_[2] = length_-2;
+          send_data_[3] = 0xA1;
+          send_data_[4] = msid;
+          memcpy(&send_data_[5],_cmd.c_str(),sizeof(_cmd.c_str()));
+
+          //CheckSum
+          for(count_ = 2;count_ < length_-1;count_++) check_sum_ += send_data_[count_];
+          send_data_[length_-1] = ~check_sum_;
 
           serial_com_.flushPort();
-          serial_com_.writeCosmoAsync(cosmo_data_);
+          serial_com_.writeAsync(send_data_);
       }
 
     private:
       //Value
       unsigned int check_sum_,count_,length_,cosmo_length_;
       std::vector<uint8_t> send_data_;
-      MsRecvRaw cosmo_data_;
 
     protected:
       SerialCommunication serial_com_;

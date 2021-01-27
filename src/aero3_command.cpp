@@ -47,43 +47,6 @@ void SerialCommunication::writeAsync(std::vector<uint8_t>& _send_data)
 }
 
 ///////////////////////////////
-void SerialCommunication::writeCosmoAsync(MsRecvRaw& _cosmo_data)
-{
-    if(cosmo_receiver_.getMSID()){
-        unsigned int check_sum_,count_;
-        std::vector<uint8_t> send_data_;
-
-        send_data_.push_back(_cosmo_data.header[0]);
-        send_data_.push_back(_cosmo_data.header[1]);
-        send_data_.push_back(_cosmo_data.len);
-        send_data_.push_back(_cosmo_data.cmd);
-
-        _cosmo_data.MSID = cosmo_receiver_.getMSID();
-        send_data_.push_back(_cosmo_data.MSID);
-
-        //CheckSum
-        check_sum_ += _cosmo_data.len;
-        check_sum_ += _cosmo_data.cmd;
-        check_sum_ += _cosmo_data.MSID;
-
-        for(count_ = 0;count_ < 57;count_++) {
-            check_sum_ += _cosmo_data.data[count_];
-            send_data_.push_back(_cosmo_data.data[count_]);
-        }
-        check_sum_ += _cosmo_data.opt;
-        _cosmo_data.cs = ~check_sum_;
-
-        send_data_.push_back(_cosmo_data.opt);
-        send_data_.push_back(_cosmo_data.cs);
-
-        serial_.async_write_some( buffer( send_data_ ), [](boost::system::error_code, std::size_t){});
-
-        io_.reset();
-        io_.run();
-    }
-}
-
-///////////////////////////////
 void SerialCommunication::onReceive(const boost::system::error_code& _error, size_t _bytes_transferred)
 {
   if (_error && _error != boost::asio::error::eof) {
@@ -135,7 +98,7 @@ void SerialCommunication::readBuffer(std::vector<uint8_t>& _receive_data, uint8_
 
     do {
         readBufferAsync(_length, 1000);
-    } while (cosmo_receiver_((MsRecvRaw*)receive_buffer_.c_str()));
+    } while (cosmo_receiver_(receive_buffer_));
 
   if(receive_buffer_.size() < _length){
     std::cerr << "Read Timeout" << std::endl;

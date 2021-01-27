@@ -7,10 +7,8 @@ struct MsRecvRaw {
     uint8_t header[2];
     uint8_t len;
     uint8_t cmd;
-    uint8_t MSID;
-    uint8_t data[57];
-    uint8_t opt;
-    uint8_t cs;
+    uint8_t msid;
+    uint8_t data[63];
 };
 
 struct CosmoReceiver{
@@ -19,32 +17,34 @@ struct CosmoReceiver{
 
     }
 
-    bool operator()(MsRecvRaw *recvd){
+    bool operator()(const std::string &recvd_str){
+
+        uint8_t recvd_raw[100] = {0};
+        for(size_t i=0; i < recvd_str.size() ; ++i){
+            recvd_raw[i] = static_cast<uint8_t>(recvd_str[i]);
+        }
+
+        MsRecvRaw* recvd = reinterpret_cast<MsRecvRaw*>(recvd_raw);
+
         if(recvd->cmd != 0xa0){
             return false; //Cosmoでない場合
         }
 
         if (tgt_queue) {
-            MSID = recvd->MSID;
             int idx = 0;
             std::ostringstream convert;
-            while (recvd->data[idx] != '\0' && idx < sizeof(recvd->data)) {
+            while (idx < recvd->len - 5 && recvd->data[idx] != 0x00) {
                 convert << (char) recvd->data[idx++];
             }
 
             std::string cmd_str = convert.str();
-            tgt_queue->enqueue(cmd_str);
+            tgt_queue->enqueue(recvd->msid,cmd_str);
         }
         return true;
     }
 
-    uint8_t getMSID(){
-        return MSID;
-    }
-
 private:
     CosmoCmdQueue* tgt_queue;
-    uint8_t MSID;
 };
 
 #endif

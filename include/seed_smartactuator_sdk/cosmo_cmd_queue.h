@@ -6,15 +6,15 @@
 
 class CosmoCmdQueue{
 public:
-    void enqueue(std::string cmd){
-        std::lock_guard<std::mutex> lock(mtx);
-        cosmo_cmds.push(cmd);
+    void enqueue(int msid, std::string cmd) {
+        std::lock_guard < std::mutex > lock(mtx);
+        cosmo_cmds.push(std::make_pair(msid, cmd));
     }
 
-    std::string dequeue(){
+    std::pair<int,std::string> dequeue(){
         std::lock_guard<std::mutex> lock(mtx);
         if(cosmo_cmds.empty()){
-            return "";
+            return std::make_pair(-1,"");
         }
 
         auto ret = cosmo_cmds.front();
@@ -23,7 +23,7 @@ public:
     }
 
 private:
-    std::queue<std::string> cosmo_cmds;
+    std::queue<std::pair<int,std::string>> cosmo_cmds;
     std::mutex mtx;
 };
 
