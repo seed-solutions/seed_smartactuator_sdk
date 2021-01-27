@@ -43,8 +43,13 @@ struct CosmoReceiver{
         return true;
     }
 
+    uint8_t getMSID(){
+        return MSID;
+    }
+
 private:
     CosmoCmdQueue* tgt_queue;
+    uint8_t MSID;
 };
 
 #endif

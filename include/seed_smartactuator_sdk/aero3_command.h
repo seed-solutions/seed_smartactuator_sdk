@@ -25,6 +25,7 @@ namespace aero
       bool openPort(std::string _port, unsigned int _baud_rate);
       void closePort();
       void writeAsync(std::vector<uint8_t>& _send_data);
+      void writeCosmoAsync(MsRecvRaw& _cosmo_data);
       void onReceive(const boost::system::error_code& _error, size_t _bytes_transferred);
       void onTimer(const boost::system::error_code& _error);
       void readBufferAsync(uint8_t _size, uint16_t _timeout);
@@ -99,6 +100,7 @@ namespace aero
       //Value
       unsigned int check_sum_,count_,length_,cosmo_length_;
       std::vector<uint8_t> send_data_;
+      MsRecvRaw cosmo_data_;
 
     protected:
       SerialCommunication serial_com_;
