@@ -7,8 +7,10 @@ struct MsRecvRaw {
     uint8_t header[2];
     uint8_t len;
     uint8_t cmd;
+    uint8_t MSID;
+    uint8_t data[57];
     uint8_t opt;
-    uint8_t data[63];
+    uint8_t cs;
 };
 
 struct CosmoReceiver{
@@ -23,7 +25,7 @@ struct CosmoReceiver{
         }
 
         if (tgt_queue) {
-
+            MSID = recvd->MSID;
             int idx = 0;
             std::ostringstream convert;
             while (recvd->data[idx] != '\0' && idx < sizeof(recvd->data)) {
@@ -36,8 +38,13 @@ struct CosmoReceiver{
         return true;
     }
 
+    uint8_t getMSID(){
+        return MSID;
+    }
+
 private:
     CosmoCmdQueue* tgt_queue;
+    uint8_t MSID;
 };
 
 #endif

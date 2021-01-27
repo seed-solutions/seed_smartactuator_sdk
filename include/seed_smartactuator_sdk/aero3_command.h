@@ -23,6 +23,7 @@ namespace aero
       bool openPort(std::string _port, unsigned int _baud_rate);
       void closePort();
       void writeAsync(std::vector<uint8_t>& _send_data);
+      void writeCosmoAsync(MsRecvRaw& _cosmo_data);
       void onReceive(const boost::system::error_code& _error, size_t _bytes_transferred);
       void onTimer(const boost::system::error_code& _error);
       void readBufferAsync(uint8_t _size, uint16_t _timeout);
@@ -71,10 +72,28 @@ namespace aero
           return serial_com_.cosmo_cmd_queue.dequeue();
       }
 
+      void sendCosmoCmd(std::string _cmd){
+
+          cosmo_length_ = 68;
+          std::vector<uint8_t> cmdVector(_cmd.begin(), _cmd.end());
+
+          cosmo_data_.header[0] = 0xFA;
+          cosmo_data_.header[1] = 0xAF;
+          cosmo_data_.len = 62;
+          cosmo_data_.cmd = 0xA1;
+          *cosmo_data_.data = cmdVector[0];
+          //BlackChannelについては今後実装する
+          cosmo_data_.opt = 0;
+
+          serial_com_.flushPort();
+          serial_com_.writeCosmoAsync(cosmo_data_);
+      }
+
     private:
       //Value
-      unsigned int check_sum_,count_,length_;
+      unsigned int check_sum_,count_,length_,cosmo_length_;
       std::vector<uint8_t> send_data_;
+      MsRecvRaw cosmo_data_;
 
     protected:
       SerialCommunication serial_com_;
