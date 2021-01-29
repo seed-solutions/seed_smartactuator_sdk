@@ -85,7 +85,7 @@ namespace aero
           send_data_[2] = length_-2;
           send_data_[3] = 0xA1;
           send_data_[4] = msid;
-          memcpy(&send_data_[5],_cmd.c_str(),sizeof(_cmd.c_str()));
+          strcpy((char*)&send_data_[5],_cmd.c_str());
 
           //CheckSum
           for(count_ = 2;count_ < length_-1;count_++) check_sum_ += send_data_[count_];

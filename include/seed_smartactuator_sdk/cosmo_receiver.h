@@ -2,6 +2,7 @@
 #define _COSMO_RECEIVER_H_
 
 #include "seed_smartactuator_sdk/cosmo_cmd_queue.h"
+#include <iostream>
 
 struct MsRecvRaw {
     uint8_t header[2];
@@ -17,16 +18,14 @@ struct CosmoReceiver{
 
     }
 
-    bool operator()(const std::string &recvd_str){
+    bool operator()(std::string &recvd_str){
 
-        uint8_t recvd_raw[100] = {0};
+        uint8_t recvd_raw[recvd_str.size()] = {0};
         for(size_t i=0; i < recvd_str.size() ; ++i){
             recvd_raw[i] = static_cast<uint8_t>(recvd_str[i]);
         }
-
         MsRecvRaw* recvd = reinterpret_cast<MsRecvRaw*>(recvd_raw);
-
-        if(recvd->cmd != 0xa0){
+        if(recvd->cmd != 0xa0 && recvd->cmd != 0xa1){
             return false; //Cosmoでない場合
         }
 
@@ -36,6 +35,8 @@ struct CosmoReceiver{
             while (idx < recvd->len - 5 && recvd->data[idx] != 0x00) {
                 convert << (char) recvd->data[idx++];
             }
+
+            recvd_str.erase (0,recvd->len+4);
 
             std::string cmd_str = convert.str();
             tgt_queue->enqueue(recvd->msid,cmd_str);

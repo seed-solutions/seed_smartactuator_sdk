@@ -73,7 +73,6 @@ void SerialCommunication::onTimer(const boost::system::error_code& _error)
 ///////////////////////////////
 void SerialCommunication::readBufferAsync(uint8_t _size=1, uint16_t _timeout=10)
 {
-  receive_buffer_.clear();
   is_canceled_ = false;
 
   boost::asio::async_read(serial_,stream_buffer_,boost::asio::transfer_at_least(_size),
@@ -97,15 +96,20 @@ void SerialCommunication::readBuffer(std::vector<uint8_t>& _receive_data, uint8_
   fill(_receive_data.begin(),_receive_data.end(),0);
 
     do {
-        readBufferAsync(_length, 1000);
+        if (receive_buffer_.length() == 0) {
+            readBufferAsync(_length, 1000);
+        }
     } while (cosmo_receiver_(receive_buffer_));
 
+
   if(receive_buffer_.size() < _length){
+      receive_buffer_.clear();
     std::cerr << "Read Timeout" << std::endl;
     comm_err_ = true;
   }
   else{
     for(size_t i=0;i<_length;++i)_receive_data[i] = receive_buffer_[i];
+    receive_buffer_.erase (0,_length);
     comm_err_ = false;
   }
 
