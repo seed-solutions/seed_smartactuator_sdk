@@ -5,7 +5,7 @@
 #include <boost/thread.hpp>
 #include <vector>
 #include <unordered_map>
-
+#include <thread>
 #include "seed_smartactuator_sdk/cosmo_receiver.h"
 
 using namespace boost::asio;
@@ -14,6 +14,25 @@ namespace aero
 {
   namespace controller
   {
+
+  class AeroBuff{
+  public:
+      void set(const std::string &recvd){
+          std::lock_guard<std::mutex> lk(mtx);
+          this->recvd = recvd;
+      }
+
+      std::string get(){
+          std::lock_guard<std::mutex> lk(mtx);
+          std::string ret = recvd;
+          recvd.clear();
+          return ret;
+      }
+
+  private:
+      std::string recvd;
+      std::mutex mtx;
+  };
 
 
     class SerialCommunication
@@ -27,15 +46,17 @@ namespace aero
       void writeAsync(std::vector<uint8_t>& _send_data);
       void onReceive(const boost::system::error_code& _error, size_t _bytes_transferred);
       void onTimer(const boost::system::error_code& _error);
-      void readBufferAsync(uint8_t _size, uint16_t _timeout);
+      void readBufferAsync();
       void readBuffer(std::vector<uint8_t>& _receive_data, uint8_t _size);
       void flushPort();
 
-      std::string receive_buffer_;
       bool comm_err_;
       CosmoCmdQueue cosmo_cmd_queue;
+      AeroBuff receive_buff;
+      const int at_least_size = 8;
 
     private:
+      std::thread io_thread;
       io_service io_;
       serial_port serial_;
       deadline_timer timer_;

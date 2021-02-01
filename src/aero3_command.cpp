@@ -28,22 +28,27 @@ bool SerialCommunication::openPort(std::string _port, unsigned int _baud_rate)
   }
   else{
     serial_.set_option(serial_port_base::baud_rate(_baud_rate));
+    readBufferAsync();
     return true;
   }
+
 }
 
 ///////////////////////////////
 void SerialCommunication::closePort()
 {
   if(serial_.is_open())serial_.close();
+
+  io_.stop();
+  if(io_thread.joinable()){
+      io_thread.join();
+  }
 }
 
 ///////////////////////////////
 void SerialCommunication::writeAsync(std::vector<uint8_t>& _send_data)
 {
   serial_.async_write_some( buffer( _send_data ), [](boost::system::error_code, std::size_t){});
-  io_.reset();
-  io_.run();
 }
 
 ///////////////////////////////
@@ -56,11 +61,18 @@ void SerialCommunication::onReceive(const boost::system::error_code& _error, siz
   }
   else {
     const std::string data(boost::asio::buffer_cast<const char*>(stream_buffer_.data()), stream_buffer_.size());
-    receive_buffer_ = data;
+
+    if(!cosmo_receiver_(data)){
+        receive_buff.set(data);
+    }
 
     stream_buffer_.consume(stream_buffer_.size());
     timer_.cancel();
     is_canceled_ = true;
+
+    boost::asio::async_read(serial_,stream_buffer_,boost::asio::transfer_at_least(at_least_size),
+        boost::bind(&SerialCommunication::onReceive, this,
+            boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
   }
 }
 
@@ -71,45 +83,45 @@ void SerialCommunication::onTimer(const boost::system::error_code& _error)
 }
 
 ///////////////////////////////
-void SerialCommunication::readBufferAsync(uint8_t _size=1, uint16_t _timeout=10)
+void SerialCommunication::readBufferAsync()
 {
   is_canceled_ = false;
 
-  boost::asio::async_read(serial_,stream_buffer_,boost::asio::transfer_at_least(_size),
+  boost::asio::async_read(serial_,stream_buffer_,boost::asio::transfer_at_least(at_least_size),
       boost::bind(&SerialCommunication::onReceive, this,
           boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
 
-  //transfer_all() -> read until full
-  //transfer_exactly(size_t size) -> read specific size
-  //transfer_at_least(size_t size) -> read at leaset size
-  timer_.expires_from_now(boost::posix_time::milliseconds(_timeout));
-  timer_.async_wait(boost::bind(&SerialCommunication::onTimer, this, _1));
   io_.reset();
-  io_.run();
+
+  io_thread = std::thread([&](){io_.run();});
+
 }
 
 void SerialCommunication::readBuffer(std::vector<uint8_t>& _receive_data, uint8_t _length = 1)
 {
-
+    std::string receive_buffer_;
   _receive_data.clear();  
   _receive_data.resize(_length);
   fill(_receive_data.begin(),_receive_data.end(),0);
 
+  int time = 0;
+  int timeMax = 100;
+
     do {
-        if (receive_buffer_.length() == 0) {
-            readBufferAsync(_length, 1000);
+        if(time != 0){
+            usleep(100);
         }
-    } while (cosmo_receiver_(receive_buffer_));
+        receive_buffer_ = receive_buff.get();
+        time++;
+    } while (receive_buffer_.empty() && time < timeMax);
 
 
   if(receive_buffer_.size() < _length){
-      receive_buffer_.clear();
     std::cerr << "Read Timeout" << std::endl;
     comm_err_ = true;
   }
   else{
     for(size_t i=0;i<_length;++i)_receive_data[i] = receive_buffer_[i];
-    receive_buffer_.erase (0,_length);
     comm_err_ = false;
   }
 

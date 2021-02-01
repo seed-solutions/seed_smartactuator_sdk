@@ -18,7 +18,7 @@ struct CosmoReceiver{
 
     }
 
-    bool operator()(std::string &recvd_str){
+    bool operator()(const std::string &recvd_str){
 
         uint8_t recvd_raw[recvd_str.size()] = {0};
         for(size_t i=0; i < recvd_str.size() ; ++i){
@@ -36,9 +36,8 @@ struct CosmoReceiver{
                 convert << (char) recvd->data[idx++];
             }
 
-            recvd_str.erase (0,recvd->len+4);
-
             std::string cmd_str = convert.str();
+
             tgt_queue->enqueue(recvd->msid,cmd_str);
         }
         return true;
