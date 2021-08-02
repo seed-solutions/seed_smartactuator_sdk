@@ -90,21 +90,52 @@ namespace aero
       std::vector<int16_t> actuateBySpeed(int16_t *_data);
       void runScript(uint8_t _number,uint16_t _data);
 
-      std::pair<int,std::string> getCosmoCmd(){
+      std::tuple<int,int,int,int,std::string> getCosmoCmd(){
           return serial_com_.cosmo_cmd_queue.dequeue();
       }
 
-      void sendCosmoCmdResp(int msid,std::string _cmd){
+      void sendCosmoCmdResp(int header_type, int addr, int cmd_type, int msid,std::string _cmd){
           check_sum_ = 0;
           length_ = 64;
 
           send_data_.resize(length_);
           fill(send_data_.begin(),send_data_.end(),0);
 
-          send_data_[0] = 0xFA;
-          send_data_[1] = 0xAF;
-          send_data_[2] = length_-2;
-          send_data_[3] = 0xA1;
+          if(header_type == 0){ //EF EFコマンドに対しての返信
+        	  send_data_[0] = 0xEF;
+        	  send_data_[1] = 0xFE;
+          }else if(header_type == 1){ //FE EFコマンドに対しての返信
+        	  send_data_[0] = 0xFE;
+        	  send_data_[1] = 0xEF;
+          }
+          switch (addr) {
+          case 1:
+        	  send_data_[2] = 0x01;
+        	  break;
+          case 2:
+        	  send_data_[2] = 0x02;
+        	  break;
+          case 4:
+        	  send_data_[2] = 0x04;
+        	  break;
+          case 8:
+        	  send_data_[2] = 0x08;
+        	  break;
+          case 16:
+        	  send_data_[2] = 0x04;//TODO 本当は0x16だけどなんか現状の仕様だと0x16ではMSが受け取らないっぽい？
+        	  break;
+          case 32:
+        	  send_data_[2] = 0x20;
+        	  break;
+          case 64:
+        	  send_data_[2] = 0x40;
+        	  break;
+          default:
+        	  send_data_[2] = addr;
+        	  break;
+          	}
+          if(cmd_type == 1) send_data_[3] = 0xA1;
+          if(cmd_type == 2) send_data_[3] = 0xA2;
           send_data_[4] = msid;
           strcpy((char*)&send_data_[5],_cmd.c_str());
 
@@ -114,6 +145,14 @@ namespace aero
 
           serial_com_.flushPort();
           serial_com_.writeAsync(send_data_);
+
+          //デバッグ用cosmo cmd表示
+          std::stringstream ss;
+          for (int i = 0; i < send_data_.size(); i++)
+          {
+        	  ss << "0x" << std::hex << static_cast<unsigned>(send_data_[i]) << ", ";
+          }
+          std::cout << ss.str() << std::endl;
       }
 
     private:

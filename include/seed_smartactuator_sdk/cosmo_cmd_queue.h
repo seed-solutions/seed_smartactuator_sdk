@@ -6,15 +6,15 @@
 
 class CosmoCmdQueue{
 public:
-    void enqueue(int msid, std::string cmd) {
+    void enqueue(int header_type, int addr, int cmd_type, int msid, std::string cmd) {
         std::lock_guard < std::mutex > lock(mtx);
-        cosmo_cmds.push(std::make_pair(msid, cmd));
+        cosmo_cmds.push(std::forward_as_tuple(header_type, addr, cmd_type, msid, cmd));
     }
 
-    std::pair<int,std::string> dequeue(){
+    std::tuple<int,int,int,int,std::string> dequeue(){
         std::lock_guard<std::mutex> lock(mtx);
         if(cosmo_cmds.empty()){
-            return std::make_pair(-1,"");
+            return std::forward_as_tuple(-1,-1,-1,-1,"");
         }
 
         auto ret = cosmo_cmds.front();
@@ -23,7 +23,7 @@ public:
     }
 
 private:
-    std::queue<std::pair<int,std::string>> cosmo_cmds;
+    std::queue<std::tuple<int,int,int,int,std::string>> cosmo_cmds;
     std::mutex mtx;
 };
 
