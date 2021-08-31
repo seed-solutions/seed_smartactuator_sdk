@@ -122,7 +122,7 @@ namespace aero
         	  send_data_[2] = 0x08;
         	  break;
           case 16:
-        	  send_data_[2] = 0x04;//TODO 本当は0x16だけどなんか現状の仕様だと0x16ではMSが受け取らないっぽい？
+        	  send_data_[2] = 0x10;//TODO 本当は0x16だけどなんか現状の仕様だと0x16ではMSが受け取らないっぽい？
         	  break;
           case 32:
         	  send_data_[2] = 0x20;
