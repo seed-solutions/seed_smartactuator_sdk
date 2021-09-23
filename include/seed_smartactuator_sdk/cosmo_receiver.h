@@ -23,30 +23,57 @@ struct CosmoReceiver{
     	 int addr;
     	 int type;
         uint8_t recvd_raw[recvd_str.size()] = {0};
+        if(recvd_str.size() != 64)
+        {
+            int cosmo_header_pos = recvd_str.find("feef");
+            //not cosmocommand            
+            if(cosmo_header_pos == std::string::npos)
+            {
+                return false;
+            }
+            else
+            {
+                //64byte
+                std::cout << "irr cosmo command length !!! " << std::endl;
+                recvd_str.substr(cosmo_header_pos, 64);
+            }
+            if(recvd_str.size() != 68) {
+    		
+    		std::cout << "not aero_command :" << recvd_str << std::endl;
+    	    }
+            
+        }
         for(size_t i=0; i < recvd_str.size() ; ++i){
             recvd_raw[i] = static_cast<uint8_t>(recvd_str[i]);
         }
         MsRecvRaw* recvd = reinterpret_cast<MsRecvRaw*>(recvd_raw);
 
-        //headerの受信
-        if(recvd->header[0] == 0xef){
-        	header = 0;
-        }else if(recvd->header[0] == 0xfe){ //EF FE形式で受け取ったら
-        	header = 1;
-        }else { //FE EF形式で受け取ったら
-        	return false; //Cosmoでない場合
-        }
-
-    	//ヘッダーデバッグ用
+//ヘッダーデバッグ用
     	/*if(recvd_str.size() == 64) {
     		std::stringstream ss;
     		for (int i = 0; i < 2; i++)
     		{
     			ss << "0x" << std::hex << static_cast<unsigned>(recvd->header[i]) << ", ";
      		}
-    		std::cout << ss.str() << std::endl;
+    		std::cout << "64byte command : " << ss.str() << std::endl;
     	}*/
 
+        //headerの受信
+        if(recvd->header[0] == 0xef){
+        	header = 0;
+
+        }else if(recvd->header[0] == 0xfe){ //EF FE形式で受け取ったら
+        	header = 1;
+
+        }else { //FE EF形式で受け取ったら
+
+    		std::cout << "not aero_command :" << recvd_str << std::endl;
+    		
+        	return false; //Cosmoでない場合
+
+        }
+
+    	
         //送り先の設定
         addr = recvd->address;
 
