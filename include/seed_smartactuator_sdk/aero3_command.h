@@ -3,6 +3,7 @@
 
 #include <boost/asio.hpp>
 #include <boost/thread.hpp>
+#include <boost/range/iterator_range.hpp>
 #include <vector>
 #include <unordered_map>
 #include <thread>
@@ -100,7 +101,6 @@ namespace aero
 
           send_data_.resize(length_);
           fill(send_data_.begin(),send_data_.end(),0);
-
           if(header_type == 0){ //EF EFコマンドに対しての返信
         	  send_data_[0] = 0xEF;
         	  send_data_[1] = 0xFE;
@@ -138,6 +138,12 @@ namespace aero
           if(cmd_type == 2) send_data_[3] = 0xA2;
           send_data_[4] = msid;
           strcpy((char*)&send_data_[5],_cmd.c_str());
+          std::stringstream ss;
+          for (int i = 0; i < send_data_.size(); i++)
+          {
+        	  ss << "0x" << std::hex << static_cast<unsigned>(send_data_[i]) << ", ";
+          }
+          std::cout << "send cosmo data: " << ss.str() << std::endl;
 
           //CheckSum
           for(count_ = 2;count_ < length_-1;count_++) check_sum_ += send_data_[count_];
@@ -146,13 +152,7 @@ namespace aero
           serial_com_.flushPort();
           serial_com_.writeAsync(send_data_);
 
-          //デバッグ用cosmo cmd表示
-          std::stringstream ss;
-          for (int i = 0; i < send_data_.size(); i++)
-          {
-        	  ss << "0x" << std::hex << static_cast<unsigned>(send_data_[i]) << ", ";
-          }
-          std::cout << ss.str() << std::endl;
+          
       }
 
     private:

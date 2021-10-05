@@ -55,18 +55,36 @@ void SerialCommunication::writeAsync(std::vector<uint8_t>& _send_data)
 void SerialCommunication::onReceive(const boost::system::error_code& _error, size_t _bytes_transferred)
 {
   if (_error && _error != boost::asio::error::eof) {
-#if DEBUG
-      std::cout << "receive failed: " << std::endl;
+#if 1
+      throw boost::system::system_error{_error};
 #endif
   }
   else {
-    const std::string data(boost::asio::buffer_cast<const char*>(stream_buffer_.data()), stream_buffer_.size());
+    std::istream is(&stream_buffer_);
+    std::string data;
+    is >> data;
+    //const std::string tmp(boost::asio::buffer_cast<const char*>(stream_buffer_.data()));
+  
+    
+    std::stringstream ss;
+    uint8_t recvd_raw[data.size()] = {0};
 
+    for (size_t i = 0; i < data.size(); ++i)
+    {
+      recvd_raw[i] = static_cast<uint8_t>(data[i]);
+      ss << std::hex << static_cast<unsigned>(recvd_raw[i]);
+
+    }
+
+    if(data.size() != 68 ){
+      std::cout << "aero data size: " << stream_buffer_.size() << " data: " << ss.str()<< std::endl;
+    
+    }
     if(!cosmo_receiver_(data)){
         receive_buff.set(data);
     }
 
-    stream_buffer_.consume(stream_buffer_.size());
+    //stream_buffer_.consume(stream_buffer_.size());
     timer_.cancel();
     is_canceled_ = true;
 
@@ -86,7 +104,7 @@ void SerialCommunication::onTimer(const boost::system::error_code& _error)
 void SerialCommunication::readBufferAsync()
 {
   is_canceled_ = false;
-
+  
   boost::asio::async_read(serial_,stream_buffer_,boost::asio::transfer_at_least(at_least_size),
       boost::bind(&SerialCommunication::onReceive, this,
           boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
