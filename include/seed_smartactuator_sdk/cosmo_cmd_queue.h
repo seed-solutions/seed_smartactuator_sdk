@@ -7,7 +7,7 @@
 
 class CosmoCmdQueue{
 public:
-    void enqueue(int header_type, int addr, int cmd_type, int msid, std::string cmd) {
+   void enqueue(int header_type, int addr, int cmd_type, int msid, std::string cmd) {
         std::lock_guard < std::mutex > lock(mtx);
 
         cosmo_cmds.push(std::forward_as_tuple(header_type, addr, cmd_type, msid, cmd));

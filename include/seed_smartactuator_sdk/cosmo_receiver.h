@@ -98,6 +98,7 @@ struct CosmoReceiver
     		std::cout << ss.str() << std::endl;
     	}*/
 
+    	
         //送り先の設定
         addr = recvd->address;
 
