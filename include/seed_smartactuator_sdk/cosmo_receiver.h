@@ -27,77 +27,21 @@ struct CosmoReceiver
         int type;
         uint8_t recvd_raw[recvd_str.size()] = {0};
 
+
         for (size_t i = 0; i < recvd_str.size(); ++i)
         {
             recvd_raw[i] = static_cast<uint8_t>(recvd_str[i]);
         }
-        MsRecvRaw *recvd = nullptr;
-        if (recvd_str.size() != 64)
-        {
-            std::stringstream ss;
-            for (int i = 0; i < recvd_str.size(); i++)
-            {
-                ss << std::hex << static_cast<unsigned>(recvd_raw[i]);
-            }
-
-
-            int cosmo_header_pos = ss.str().find("fe");
-            if (cosmo_header_pos == std::string::npos)
-            {
-                //aeroの場合
-                //std::cout << "cosmoヘッダが見つかりません" << std::endl;
-                return false;
-            }
-            else
-            {
-                //header位置によって分割位置を分ける
-                std::cout << "データ長異常 " <<  recvd_str.size() << std::endl;
-                uint8_t recvd_raw_re[64] = {0};
-                std::stringstream ss;
-                ss << std::hex << static_cast<unsigned>(recvd_raw[0]);
-                std::cout << ss.str() << std::endl;
-                if(ss.str() == "fe")
-                {
-                    std::cout << "cosmo header" << std::endl;
-                }
-                for (size_t i = 0; i < 64; ++i)
-                {
-                    recvd_raw_re[i] = recvd_raw[i];
-                }
-                recvd = reinterpret_cast<MsRecvRaw *>(recvd_raw_re);
-
-
-            }
-            /* fe,ef,4,a1,1,73,65,6e,61,5f,72,65,73,74,61,72,74,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4e, */
-        }
-        else
-        {
-            //cosmoの場合
-            std::cout << "cosmoを受信しました" << std::endl;
-
-            recvd = reinterpret_cast<MsRecvRaw *>(recvd_raw);
-        }
-        
+        MsRecvRaw* recvd = reinterpret_cast<MsRecvRaw*>(recvd_raw);
 
         //headerの受信
-        if (recvd->header[0] == 0xef)
-        {
+        if (recvd->header[0] == 0xef) {
             header = 0;
-        }
-        else if (recvd->header[0] == 0xfe)
-        { //EF FE形式で受け取ったら
+        } else if (recvd->header[0] == 0xfe) { //EF FE形式で受け取ったら
             header = 1;
+        } else {
+            return false;
         }
-        //ヘッダーデバッグ用
-        /*if(recvd_str.size() == 64) {
-    		std::stringstream ss;
-    		for (int i = 0; i < 2; i++)
-    		{
-    			ss << "0x" << std::hex << static_cast<unsigned>(recvd->header[i]) << ", ";
-     		}
-    		std::cout << ss.str() << std::endl;
-    	}*/
-
     	
         //送り先の設定
         addr = recvd->address;

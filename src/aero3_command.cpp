@@ -51,6 +51,66 @@ void SerialCommunication::writeAsync(std::vector<uint8_t>& _send_data)
   serial_.async_write_some( buffer( _send_data ), [](boost::system::error_code, std::size_t){});
 }
 
+struct AeroRecvRaw
+{
+    uint8_t header[2];
+    uint8_t ad;//aeroでは、cmdから,checksumの手前までのデータ長,cosmoでは、msのアドレス
+    uint8_t data;
+};
+
+void dump(const std::string& str){
+    auto recvd_raw = reinterpret_cast<const uint8_t*>(str.c_str());
+
+    printf("recvd size: %ld hex: ",str.size());
+    for(int idx = 0;idx < str.size();++idx){
+        if(idx%4 == 0){
+            printf("  ");
+        }
+        printf("%02x ",recvd_raw[idx]);
+    }
+    printf("\n");
+}
+
+//read_str = "" -> 終了
+//return:成功/失敗
+bool readOne(std::string recvd_str,std::string &read_str){
+    int len = 0;
+    constexpr int extra_len = 4;
+
+    const AeroRecvRaw* recvd = reinterpret_cast<const AeroRecvRaw*>(recvd_str.c_str());
+    if((recvd->header[0] == 0xfe && recvd->header[1] == 0xef) || (recvd->header[0] == 0xef && recvd->header[1] == 0xfe)){
+        //cosmoコマンドは64バイトの固定長
+        len = 64-extra_len;//データ長64バイトから、チェックサム,ヘッダ,adを除いた長さ
+    }else{
+        //aeroコマンド
+        len = recvd->ad;
+    }
+
+    //データが足りない場合
+    if (recvd_str.size() < len + extra_len) {
+        //データ未到達なだけかもしれないので、破棄しない
+        return true;
+    }
+
+    //ヘッダを除いた部分のチェックサムを計算
+    unsigned int checksum = recvd->ad;
+    for (int idx = 0; idx < len; idx++) {
+        checksum += (&recvd->data)[idx];
+    }
+    checksum = ~checksum;
+    if (((uint8_t)checksum) != (&recvd->data)[len]) {
+        //データを破棄
+        return false;
+    }
+
+    std::string ret(recvd_str,0, len + extra_len);
+    read_str = ret;
+
+    return true;
+}
+
+
+
 ///////////////////////////////
 void SerialCommunication::onReceive(const boost::system::error_code& _error, size_t _bytes_transferred)
 {
@@ -60,37 +120,48 @@ void SerialCommunication::onReceive(const boost::system::error_code& _error, siz
 #endif
   }
   else {
-    std::istream is(&stream_buffer_);
-    std::string data;
-    is >> data;
-    //const std::string tmp(boost::asio::buffer_cast<const char*>(stream_buffer_.data()));
-  
-    
-    std::stringstream ss;
-    uint8_t recvd_raw[data.size()] = {0};
+      const std::string data_full(boost::asio::buffer_cast<const char*>(stream_buffer_.data()), stream_buffer_.size());
 
-    for (size_t i = 0; i < data.size(); ++i)
-    {
-      recvd_raw[i] = static_cast<uint8_t>(data[i]);
-      ss << std::hex << static_cast<unsigned>(recvd_raw[i]);
+        std::string rest_data = data_full;
+        std::string read_data;
 
-    }
+        if(data_full.size()>68){
+            dump(data_full);
+        }
 
-    if(data.size() != 68 ){
-      std::cout << "aero data size: " << stream_buffer_.size() << " data: " << ss.str()<< std::endl;
-    
-    }
-    if(!cosmo_receiver_(data)){
-        receive_buff.set(data);
-    }
+        while (1) {
+            bool ok = readOne(rest_data, read_data);
 
-    //stream_buffer_.consume(stream_buffer_.size());
-    timer_.cancel();
-    is_canceled_ = true;
+            if (!ok) {
+                //データ全部破棄
+                stream_buffer_.consume(stream_buffer_.size());
+            }
 
-    boost::asio::async_read(serial_,stream_buffer_,boost::asio::transfer_at_least(at_least_size),
-        boost::bind(&SerialCommunication::onReceive, this,
-            boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
+            if (read_data.empty()) {
+                break;
+            }
+
+            if (!cosmo_receiver_(read_data)) {
+                receive_buff.set(read_data);
+            }
+
+            //読み込み済みデータをバッファから破棄
+            stream_buffer_.consume(read_data.size());
+            if (rest_data.size() <= read_data.size()) {
+                rest_data.clear();
+                break;
+            } else {
+                rest_data = rest_data.substr(read_data.size());
+            }
+        }
+
+      //
+      timer_.cancel();
+      is_canceled_ = true;
+
+      boost::asio::async_read(serial_,stream_buffer_,boost::asio::transfer_at_least(at_least_size),
+              boost::bind(&SerialCommunication::onReceive, this,
+                      boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
   }
 }
 
