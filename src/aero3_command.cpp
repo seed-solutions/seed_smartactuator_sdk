@@ -676,16 +676,18 @@ void AeroCommand::setControllerCmd()
 	int length = 7;
 	int header_size = 4;
 	std::vector<uint8_t> receive_data;
-	receive_data.resize(64);
+	receive_data.resize(length+header_size);
 	fill(receive_data.begin(),receive_data.end(),0);
 	serial_com_.readBuffer(receive_data,receive_data.size());
 	comm_err_ = serial_com_.comm_err_;
-	std::stringstream ss;
-	for (int i = 0; i < receive_data.size(); i++)
-	{
-		ss << "0x" << std::hex << static_cast<unsigned>(receive_data[i]) << ", ";
+	if(receive_data[0] != 0x00){
+		std::stringstream ss;
+		for (int i = 0; i < receive_data.size(); i++)
+		{
+			ss << "0x" << std::hex << static_cast<unsigned>(receive_data[i]) << ", ";
+		}
+		std::cout << "RECV COSMO data: " << ss.str() << std::endl;
 	}
-	std::cout << "RECV COSMO data: " << ss.str() << std::endl;
 
 	if(!comm_err_ && receive_data[0] == 0xBF &&  receive_data[1] == 0xFB){
 		cosmo_cmd_[0] = receive_data[0];
