@@ -79,7 +79,7 @@ bool readOne(std::string recvd_str,std::string &read_str){
 
     const AeroRecvRaw* recvd = reinterpret_cast<const AeroRecvRaw*>(recvd_str.c_str());
     if((recvd->header[0] == 0xfe && recvd->header[1] == 0xef) || (recvd->header[0] == 0xef && recvd->header[1] == 0xfe)
-    		|| (recvd->header[0] == 0xbf && recvd->header[1] == 0xfb)){
+    		|| (recvd->header[0] == 0xfb && recvd->header[1] == 0xbf)){
         //cosmoコマンドは64バイトの固定長
         len = 64-extra_len;//データ長64バイトから、チェックサム,ヘッダ,adを除いた長さ
     }else{
@@ -689,7 +689,7 @@ void AeroCommand::setControllerCmd()
 		std::cout << "RECV COSMO data: " << ss.str() << std::endl;
 	}
 
-	if(!comm_err_ && receive_data[0] == 0xBF &&  receive_data[1] == 0xFB){
+	if(!comm_err_ && receive_data[0] == 0xFB &&  receive_data[1] == 0xBF){
 		cosmo_cmd_[0] = receive_data[0];
 		cosmo_cmd_[1] = receive_data[1];
 		cosmo_cmd_[2] = length;
