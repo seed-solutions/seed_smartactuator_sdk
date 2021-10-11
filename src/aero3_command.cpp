@@ -78,7 +78,8 @@ bool readOne(std::string recvd_str,std::string &read_str){
     constexpr int extra_len = 4;
 
     const AeroRecvRaw* recvd = reinterpret_cast<const AeroRecvRaw*>(recvd_str.c_str());
-    if((recvd->header[0] == 0xfe && recvd->header[1] == 0xef) || (recvd->header[0] == 0xef && recvd->header[1] == 0xfe)){
+    if((recvd->header[0] == 0xfe && recvd->header[1] == 0xef) || (recvd->header[0] == 0xef && recvd->header[1] == 0xfe)
+    		|| (recvd->header[0] == 0xbf && recvd->header[1] == 0xfb)){
         //cosmoコマンドは64バイトの固定長
         len = 64-extra_len;//データ長64バイトから、チェックサム,ヘッダ,adを除いた長さ
     }else{
@@ -668,4 +669,35 @@ void AeroCommand::runScript(uint8_t _number,uint16_t _data)
 
   serial_com_.flushPort();
   serial_com_.writeAsync(send_data_);
+}
+
+void AeroCommand::setControllerCmd()
+{
+	int length = 7;
+	int header_size = 4;
+	std::vector<uint8_t> receive_data;
+	receive_data.resize(64);
+	fill(receive_data.begin(),receive_data.end(),0);
+	serial_com_.readBuffer(receive_data,receive_data.size());
+	comm_err_ = serial_com_.comm_err_;
+	std::stringstream ss;
+	for (int i = 0; i < receive_data.size(); i++)
+	{
+		ss << "0x" << std::hex << static_cast<unsigned>(receive_data[i]) << ", ";
+	}
+	std::cout << "RECV COSMO data: " << ss.str() << std::endl;
+
+	if(!comm_err_ && receive_data[0] == 0xBF &&  receive_data[1] == 0xFB){
+		cosmo_cmd_[0] = receive_data[0];
+		cosmo_cmd_[1] = receive_data[1];
+		cosmo_cmd_[2] = length;
+		cosmo_cmd_[3] = receive_data[3];
+		for(size_t i=0;i<length;++i) cosmo_cmd_[i+header_size] = receive_data[i+header_size];
+		std::stringstream ss1;
+		for (int i = 0; i < cosmo_cmd_.size(); i++)
+		{
+			ss1 << "0x" << std::hex << static_cast<unsigned>(cosmo_cmd_[i]) << ", ";
+		}
+		std::cout << "INPUT COSMO data: " << ss1.str() << std::endl;
+	}
 }
