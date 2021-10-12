@@ -210,9 +210,9 @@ void SerialCommunication::readBuffer(std::vector<uint8_t>& _receive_data, uint8_
         time++;
     } while (receive_buffer_.empty() && time < timeMax);
 
-
-  if(receive_buffer_.size() != 0 && receive_buffer_.size() < _length){
-    std::cerr << "Read Timeout"  << receive_buffer_.size() << ": " <<_length << std::endl;
+  if(receive_buffer_.size() < _length){
+    std::cerr << "Read Timeout" <<std::endl;
+    std::cout << "BUFFER SIZE: " <<receive_buffer_.size() << ",LENGTH: " << (int)_length <<std::endl;
     comm_err_ = true;
     move_cmd_.resize(11);
     fill(move_cmd_.begin(),move_cmd_.end(),0);
