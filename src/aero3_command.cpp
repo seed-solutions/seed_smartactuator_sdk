@@ -78,11 +78,14 @@ bool readOne(std::string recvd_str,std::string &read_str){
     constexpr int extra_len = 4;
 
     const AeroRecvRaw* recvd = reinterpret_cast<const AeroRecvRaw*>(recvd_str.c_str());
-    if((recvd->header[0] == 0xfe && recvd->header[1] == 0xef) || (recvd->header[0] == 0xef && recvd->header[1] == 0xfe)
-    		|| (recvd->header[0] == 0xfb && recvd->header[1] == 0xbf)){
+    if((recvd->header[0] == 0xfe && recvd->header[1] == 0xef) || (recvd->header[0] == 0xef && recvd->header[1] == 0xfe)){
         //cosmoコマンドは64バイトの固定長
         len = 64-extra_len;//データ長64バイトから、チェックサム,ヘッダ,adを除いた長さ
-    }else{
+    }
+    else if(recvd->header[0] == 0xfb && recvd->header[1] == 0xbf){
+    	len = 11-extra_len;
+    }
+    else{
         //aeroコマンド
         len = recvd->ad;
     }
@@ -93,15 +96,17 @@ bool readOne(std::string recvd_str,std::string &read_str){
         return true;
     }
 
-    //ヘッダを除いた部分のチェックサムを計算
-    unsigned int checksum = recvd->ad;
-    for (int idx = 0; idx < len; idx++) {
-        checksum += (&recvd->data)[idx];
-    }
-    checksum = ~checksum;
-    if (((uint8_t)checksum) != (&recvd->data)[len]) {
-        //データを破棄
-        return false;
+    if(!(recvd->header[0] == 0xfb && recvd->header[1] == 0xbf)){
+    	//ヘッダを除いた部分のチェックサムを計算
+    	/*unsigned int checksum = recvd->ad;
+    	for (int idx = 0; idx < len; idx++) {
+    		checksum += (&recvd->data)[idx];
+    	}
+    	checksum = ~checksum;
+    	if (((uint8_t)checksum) != (&recvd->data)[len]) {
+    		//データを破棄
+    		return false;
+    	}*/
     }
 
     std::string ret(recvd_str,0, len + extra_len);
@@ -206,15 +211,22 @@ void SerialCommunication::readBuffer(std::vector<uint8_t>& _receive_data, uint8_
     } while (receive_buffer_.empty() && time < timeMax);
 
 
-  if(receive_buffer_.size() < _length){
-    std::cerr << "Read Timeout" << std::endl;
+  if(receive_buffer_.size() != 0 && receive_buffer_.size() < _length){
+    std::cerr << "Read Timeout"  << receive_buffer_.size() << ": " <<_length << std::endl;
     comm_err_ = true;
+    move_cmd_.resize(11);
+    fill(move_cmd_.begin(),move_cmd_.end(),0);
+    if(receive_buffer_.size() == 11){
+    	for(size_t i=0; i <receive_buffer_.size(); ++i){
+    		move_cmd_[i] = receive_buffer_[i];
+    	}
+    	is_move_ = true;
+    }
   }
   else{
     for(size_t i=0;i<_length;++i)_receive_data[i] = receive_buffer_[i];
     comm_err_ = false;
   }
-
 }
 
 ///////////////////////////////
@@ -588,6 +600,7 @@ std::vector<int16_t> AeroCommand::actuateByPosition(uint16_t _time, int16_t *_da
 
   serial_com_.readBuffer(receive_data,receive_data.size());
   comm_err_ = serial_com_.comm_err_;
+  is_move_ = serial_com_.is_move_;
 
   std::vector<int16_t> parse_data;    //present position & robot status
   parse_data.resize(31);
@@ -675,31 +688,34 @@ void AeroCommand::setControllerCmd()
 {
 	int length = 7;
 	int header_size = 4;
-	std::vector<uint8_t> receive_data;
-	receive_data.resize(length+header_size);
-	fill(receive_data.begin(),receive_data.end(),0);
-	serial_com_.readBuffer(receive_data,receive_data.size());
-	comm_err_ = serial_com_.comm_err_;
-	if(receive_data[0] != 0x00){
+	move_cmd_ = serial_com_.move_cmd_;
+	if(move_cmd_[0] != 0x00){
 		std::stringstream ss;
-		for (int i = 0; i < receive_data.size(); i++)
+		for (int i = 0; i < move_cmd_.size(); i++)
 		{
-			ss << "0x" << std::hex << static_cast<unsigned>(receive_data[i]) << ", ";
+			ss << "0x" << std::hex << static_cast<unsigned>(move_cmd_[i]) << ", ";
 		}
 		std::cout << "RECV COSMO data: " << ss.str() << std::endl;
 	}
-
-	if(!comm_err_ && receive_data[0] == 0xFB &&  receive_data[1] == 0xBF){
-		cosmo_cmd_[0] = receive_data[0];
-		cosmo_cmd_[1] = receive_data[1];
+	else{
+		return;
+	}
+	cosmo_cmd_.resize(11);
+	fill(cosmo_cmd_.begin(),cosmo_cmd_.end(),0);
+	if(move_cmd_[0] == 0xFB &&  move_cmd_[1] == 0xBF){
+		cosmo_cmd_[0] = move_cmd_[0];
+		cosmo_cmd_[1] = move_cmd_[1];
 		cosmo_cmd_[2] = length;
-		cosmo_cmd_[3] = receive_data[3];
-		for(size_t i=0;i<length;++i) cosmo_cmd_[i+header_size] = receive_data[i+header_size];
+		cosmo_cmd_[3] = move_cmd_[3];
+		for(size_t i=0;i<length;++i) cosmo_cmd_[i+header_size] = move_cmd_[i+header_size];
 		std::stringstream ss1;
 		for (int i = 0; i < cosmo_cmd_.size(); i++)
 		{
 			ss1 << "0x" << std::hex << static_cast<unsigned>(cosmo_cmd_[i]) << ", ";
 		}
 		std::cout << "INPUT COSMO data: " << ss1.str() << std::endl;
+	}
+	else{
+		return;
 	}
 }
