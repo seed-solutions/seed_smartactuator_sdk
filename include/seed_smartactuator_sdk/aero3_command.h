@@ -51,7 +51,8 @@ namespace aero
       void readBuffer(std::vector<uint8_t>& _receive_data, uint8_t _size);
       void flushPort();
 
-      bool comm_err_,is_move_;
+      bool comm_err_;
+      bool is_move_ = false;
       std::vector<uint8_t> cosmo_cmd_;
       std::vector<uint8_t> move_cmd_;
       CosmoCmdQueue cosmo_cmd_queue;
@@ -74,7 +75,8 @@ namespace aero
       AeroCommand();
       ~AeroCommand();
 
-      bool is_open_,comm_err_,is_move_;
+      bool is_open_,comm_err_;
+      bool is_move_ = false;
       std::vector<uint8_t> cosmo_cmd_;
       std::vector<uint8_t> move_cmd_;
 

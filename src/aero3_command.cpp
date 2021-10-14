@@ -690,12 +690,12 @@ void AeroCommand::setControllerCmd()
 	int header_size = 4;
 	move_cmd_ = serial_com_.move_cmd_;
 	if(move_cmd_[0] != 0x00){
-		std::stringstream ss;
+		/*std::stringstream ss;
 		for (int i = 0; i < move_cmd_.size(); i++)
 		{
 			ss << "0x" << std::hex << static_cast<unsigned>(move_cmd_[i]) << ", ";
 		}
-		std::cout << "RECV COSMO data: " << ss.str() << std::endl;
+		std::cout << "RECV COSMO data: " << ss.str() << std::endl;*/
 	}
 	else{
 		return;
@@ -708,12 +708,12 @@ void AeroCommand::setControllerCmd()
 		cosmo_cmd_[2] = length;
 		cosmo_cmd_[3] = move_cmd_[3];
 		for(size_t i=0;i<length;++i) cosmo_cmd_[i+header_size] = move_cmd_[i+header_size];
-		std::stringstream ss1;
+		/*std::stringstream ss1;
 		for (int i = 0; i < cosmo_cmd_.size(); i++)
 		{
 			ss1 << "0x" << std::hex << static_cast<unsigned>(cosmo_cmd_[i]) << ", ";
 		}
-		std::cout << "INPUT COSMO data: " << ss1.str() << std::endl;
+		std::cout << "INPUT COSMO data: " << ss1.str() << std::endl;*/
 	}
 	else{
 		return;
