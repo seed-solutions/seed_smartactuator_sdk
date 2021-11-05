@@ -219,7 +219,7 @@ void SerialCommunication::readBuffer(std::vector<uint8_t>& _receive_data, uint8_
 ///////////////////////////////
 void SerialCommunication::flushPort()
 {
-  ::tcflush(serial_.lowest_layer().native_handle(),TCIOFLUSH);
+  //::tcflush(serial_.lowest_layer().native_handle(),TCIOFLUSH);
 }
 
 //*******************************************************************
