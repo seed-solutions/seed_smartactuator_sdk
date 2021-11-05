@@ -52,6 +52,9 @@ namespace aero
       void flushPort();
 
       bool comm_err_;
+      bool is_move_ = false;
+      std::vector<uint8_t> cosmo_cmd_;
+      std::vector<uint8_t> move_cmd_;
       CosmoCmdQueue cosmo_cmd_queue;
       AeroBuff receive_buff;
       const int at_least_size = 8;
@@ -73,6 +76,9 @@ namespace aero
       ~AeroCommand();
 
       bool is_open_,comm_err_;
+      bool is_move_ = false;
+      std::vector<uint8_t> cosmo_cmd_;
+      std::vector<uint8_t> move_cmd_;
 
       bool openPort(std::string _port, unsigned int _baud_rate);
       void closePort();
@@ -90,6 +96,7 @@ namespace aero
       std::vector<int16_t> actuateByPosition(uint16_t _time, int16_t *_data);
       std::vector<int16_t> actuateBySpeed(int16_t *_data);
       void runScript(uint8_t _number,uint16_t _data);
+      void setControllerCmd();
 
       std::tuple<int,int,int,int,std::string> getCosmoCmd(){
           return serial_com_.cosmo_cmd_queue.dequeue();
@@ -151,8 +158,11 @@ namespace aero
 
           serial_com_.flushPort();
           serial_com_.writeAsync(send_data_);
-
-          
+      }
+      void moveCmdReset(){
+    	  is_move_ = serial_com_.is_move_ = false;
+    	  move_cmd_.clear();
+    	  serial_com_.move_cmd_.clear();
       }
 
     private:
