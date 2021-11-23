@@ -65,7 +65,14 @@ struct CosmoReceiver
             std::string cmd_str = convert.str();
             std::cout << "##################DEBUG: " << cmd_str << std::endl;
 
-            tgt_queue->enqueue(header, addr, type, recvd->msid, cmd_str);
+            CosmoCmdReqType req;
+            req.header_type = header;
+            req.addr = addr;
+            req.cmd_type = type;
+            req.msid = recvd->msid;
+            req.cmd_str = cmd_str;
+
+            tgt_queue->enqueue(req);
         }
         return true;
     }
