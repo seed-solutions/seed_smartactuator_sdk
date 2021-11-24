@@ -211,7 +211,7 @@ void SerialCommunication::readBuffer(std::vector<uint8_t>& _receive_data,const s
         receive_buffer_ = receive_buff.get();
         time++;
         recvd = reinterpret_cast<const AeroRecvRaw*>(receive_buffer_.c_str());
-    } while (receive_buffer_.empty() && time < timeMax && !(header[0] == recvd->header[0] && header[1] == recvd->header[1]));
+    } while ((receive_buffer_.empty() || !(header[0] == recvd->header[0] && header[1] == recvd->header[1])) && time < timeMax );
 
   if(receive_buffer_.size() < _length || !(header[0] == recvd->header[0] && header[1] == recvd->header[1])){
     std::cerr << "Read Timeout" <<std::endl;
