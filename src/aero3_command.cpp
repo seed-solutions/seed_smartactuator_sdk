@@ -78,6 +78,7 @@ bool readOne(std::string recvd_str,std::string &read_str){
     constexpr int extra_len = 4;
 
     const AeroRecvRaw* recvd = reinterpret_cast<const AeroRecvRaw*>(recvd_str.c_str());
+//    bool aero = false;
     if((recvd->header[0] == 0xfe && recvd->header[1] == 0xef) || (recvd->header[0] == 0xef && recvd->header[1] == 0xfe)){
         //cosmoコマンドは64バイトの固定長
         len = 64-extra_len;//データ長64バイトから、チェックサム,ヘッダ,adを除いた長さ
@@ -87,6 +88,7 @@ bool readOne(std::string recvd_str,std::string &read_str){
     }
     else{
         //aeroコマンド
+//        aero = true;
         len = recvd->ad;
     }
 
@@ -96,18 +98,18 @@ bool readOne(std::string recvd_str,std::string &read_str){
         return true;
     }
 
-    if(!(recvd->header[0] == 0xfb && recvd->header[1] == 0xbf)){
-    	//ヘッダを除いた部分のチェックサムを計算
-    	/*unsigned int checksum = recvd->ad;
-    	for (int idx = 0; idx < len; idx++) {
-    		checksum += (&recvd->data)[idx];
-    	}
-    	checksum = ~checksum;
-    	if (((uint8_t)checksum) != (&recvd->data)[len]) {
-    		//データを破棄
-    		return false;
-    	}*/
-    }
+//    if(aero){EEPROMデータ取得などは、チェックサムがついていない？
+//        //ヘッダを除いた部分のチェックサムを計算
+//        unsigned int checksum = recvd->ad;
+//         for (int idx = 0; idx < len; idx++) {
+//         checksum += (&recvd->data)[idx];
+//         }
+//         checksum = ~checksum;
+//         if (((uint8_t)checksum) != (&recvd->data)[len]) {
+//         //データを破棄
+//         return false;
+//         }
+//    }
 
     std::string ret(recvd_str,0, len + extra_len);
     read_str = ret;
@@ -192,25 +194,26 @@ void SerialCommunication::readBufferAsync()
 
 }
 
-void SerialCommunication::readBuffer(std::vector<uint8_t>& _receive_data, uint8_t _length = 1)
+void SerialCommunication::readBuffer(std::vector<uint8_t>& _receive_data,const std::vector<uint8_t> &header, uint8_t _length = 1)
 {
     std::string receive_buffer_;
   _receive_data.clear();  
   _receive_data.resize(_length);
   fill(_receive_data.begin(),_receive_data.end(),0);
-
   int time = 0;
   int timeMax = 100;
+  const AeroRecvRaw* recvd;
 
     do {
-        if(time != 0){
+        if (time != 0) {
             usleep(100);
         }
         receive_buffer_ = receive_buff.get();
         time++;
-    } while (receive_buffer_.empty() && time < timeMax);
+        recvd = reinterpret_cast<const AeroRecvRaw*>(receive_buffer_.c_str());
+    } while (receive_buffer_.empty() && time < timeMax && !(header[0] == recvd->header[0] && header[1] == recvd->header[1]));
 
-  if(receive_buffer_.size() < _length){
+  if(receive_buffer_.size() < _length || !(header[0] == recvd->header[0] && header[1] == recvd->header[1])){
     std::cerr << "Read Timeout" <<std::endl;
     std::cout << "BUFFER SIZE: " <<receive_buffer_.size() << ",LENGTH: " << (int)_length <<std::endl;
     comm_err_ = true;
@@ -356,7 +359,7 @@ std::vector<int16_t> AeroCommand::getPosition(uint8_t _number)
   else receive_data.resize(8);
   fill(receive_data.begin(),receive_data.end(),0);
 
-  serial_com_.readBuffer(receive_data,receive_data.size());
+  serial_com_.readBuffer(receive_data,{0xDF,0xFD},receive_data.size());
   comm_err_ = serial_com_.comm_err_;
   std::vector<int16_t> parse_data;
   if(_number==0) parse_data.resize(30);
@@ -397,7 +400,7 @@ std::vector<uint16_t> AeroCommand::getCurrent(uint8_t _number)
   else receive_data.resize(8);
   fill(receive_data.begin(),receive_data.end(),0);
 
-  serial_com_.readBuffer(receive_data,receive_data.size());
+  serial_com_.readBuffer(receive_data,{0xDF,0xFD},receive_data.size());
   comm_err_ = serial_com_.comm_err_;
   std::vector<uint16_t> parse_data;
   if(_number==0) parse_data.resize(31);
@@ -438,7 +441,7 @@ std::vector<uint16_t> AeroCommand::getTemperatureVoltage(uint8_t _number)
   else receive_data.resize(8);
   fill(receive_data.begin(),receive_data.end(),0);
 
-  serial_com_.readBuffer(receive_data,receive_data.size());
+  serial_com_.readBuffer(receive_data,{0xDF,0xFD},receive_data.size());
   comm_err_ = serial_com_.comm_err_;
   std::vector<uint16_t> parse_data;
   if(_number==0) parse_data.resize(31);
@@ -478,7 +481,7 @@ std::string AeroCommand::getVersion(uint8_t _number)
   receive_data.resize(11);
   fill(receive_data.begin(),receive_data.end(),0);
 
-  serial_com_.readBuffer(receive_data,receive_data.size());
+  serial_com_.readBuffer(receive_data,{0xDF,0xFD},receive_data.size());
   comm_err_ = serial_com_.comm_err_;
 
   std::string version = "";
@@ -518,7 +521,7 @@ std::vector<uint16_t> AeroCommand::getStatus(uint8_t _number)
   else receive_data.resize(8);
   fill(receive_data.begin(),receive_data.end(),0);
 
-  serial_com_.readBuffer(receive_data,receive_data.size());
+  serial_com_.readBuffer(receive_data,{0xDF,0xFD},receive_data.size());
   comm_err_ = serial_com_.comm_err_;
 
   std::vector<uint16_t> parse_data;    //status data
@@ -598,7 +601,7 @@ std::vector<int16_t> AeroCommand::actuateByPosition(uint16_t _time, int16_t *_da
   receive_data.resize(68);
   fill(receive_data.begin(),receive_data.end(),0);
 
-  serial_com_.readBuffer(receive_data,receive_data.size());
+  serial_com_.readBuffer(receive_data,{0xDF,0xFD},receive_data.size());
   comm_err_ = serial_com_.comm_err_;
   is_move_ = serial_com_.is_move_;
 
@@ -643,7 +646,7 @@ std::vector<int16_t> AeroCommand::actuateBySpeed(int16_t *_data)
   receive_data.resize(68);
   fill(receive_data.begin(),receive_data.end(),0);
 
-  serial_com_.readBuffer(receive_data,receive_data.size());
+  serial_com_.readBuffer(receive_data,{0xDF,0xFD},receive_data.size());
   comm_err_ = serial_com_.comm_err_;
 
   std::vector<int16_t> parse_data;    //present position & robot status

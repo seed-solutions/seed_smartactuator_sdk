@@ -48,7 +48,7 @@ namespace aero
       void onReceive(const boost::system::error_code& _error, size_t _bytes_transferred);
       void onTimer(const boost::system::error_code& _error);
       void readBufferAsync();
-      void readBuffer(std::vector<uint8_t>& _receive_data, uint8_t _size);
+      void readBuffer(std::vector<uint8_t>& _receive_data,const std::vector<uint8_t> &header, uint8_t _size);
       void flushPort();
 
       bool comm_err_;
@@ -98,6 +98,7 @@ namespace aero
       void runScript(uint8_t _number,uint16_t _data);
       void setControllerCmd();
 
+      void resetting();
       void write_1byte(uint16_t _address, uint8_t *_write_data);
       void write_2byte(uint16_t _address, uint16_t *_write_data);
       std::vector<uint8_t> read_1byte(uint16_t _address);
