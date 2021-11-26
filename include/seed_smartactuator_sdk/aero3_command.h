@@ -20,17 +20,21 @@ namespace aero
   public:
       void set(const std::string &recvd){
           std::lock_guard<std::mutex> lk(mtx);
-          this->recvd = recvd;
+          recvd_queue.push(recvd);
       }
 
       std::string get(){
           std::lock_guard<std::mutex> lk(mtx);
-          std::string ret = recvd;
-          recvd.clear();
+          std::string ret;
+          if(!recvd_queue.empty()){
+              ret = recvd_queue.front();
+              recvd_queue.pop();
+          }
           return ret;
       }
 
   private:
+      std::queue<std::string> recvd_queue;
       std::string recvd;
       std::mutex mtx;
   };
