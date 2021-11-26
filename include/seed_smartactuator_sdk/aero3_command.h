@@ -71,6 +71,8 @@ namespace aero
       CosmoReceiver cosmo_receiver_;
       bool is_canceled_;
       boost::asio::streambuf stream_buffer_;
+      std::string port;
+
 
     };
 

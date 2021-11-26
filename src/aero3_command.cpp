@@ -21,6 +21,7 @@ SerialCommunication::~SerialCommunication()
 ///////////////////////////////
 bool SerialCommunication::openPort(std::string _port, unsigned int _baud_rate)
 {
+   this->port = _port;
   boost::system::error_code error_code;
   serial_.open(_port,error_code);
   if(error_code){
@@ -61,12 +62,12 @@ struct AeroRecvRaw
 void dump(const std::string& str){
     auto recvd_raw = reinterpret_cast<const uint8_t*>(str.c_str());
 
-    printf("recvd size: %ld hex: ",str.size());
+    printf("data size: %ld hex: ",str.size());
     for(int idx = 0;idx < str.size();++idx){
         if(idx%4 == 0){
             printf("  ");
         }
-        printf("%02x ",recvd_raw[idx]);
+        printf("%02x",recvd_raw[idx]);
     }
     printf("\n");
 }
@@ -78,17 +79,18 @@ bool readOne(std::string recvd_str,std::string &read_str){
     constexpr int extra_len = 4;
 
     const AeroRecvRaw* recvd = reinterpret_cast<const AeroRecvRaw*>(recvd_str.c_str());
-//    bool aero = false;
-    if((recvd->header[0] == 0xfe && recvd->header[1] == 0xef) || (recvd->header[0] == 0xef && recvd->header[1] == 0xfe)){
+    bool aero = false;
+    if ((recvd->header[0] == 0xfe && recvd->header[1] == 0xef)
+            || (recvd->header[0] == 0xef && recvd->header[1] == 0xfe)) {
         //cosmoコマンドは64バイトの固定長
-        len = 64-extra_len;//データ長64バイトから、チェックサム,ヘッダ,adを除いた長さ
-    }
-    else if(recvd->header[0] == 0xfb && recvd->header[1] == 0xbf){
-    	len = 11-extra_len;
-    }
-    else{
+        len = 64 - extra_len; //データ長64バイトから、チェックサム,ヘッダ,adを除いた長さ
+    } else if (recvd->header[0] == 0xfb && recvd->header[1] == 0xbf) {
+        len = 11 - extra_len;
+    } else if (recvd->header[0] == 0xcf && recvd->header[1] == 0xfc) { //EEPROM書き込みコマンド
+        len = recvd->ad -1;//チェックサムがないので、1バイト引いておく
+    } else {
         //aeroコマンド
-//        aero = true;
+        aero = true;
         len = recvd->ad;
     }
 
@@ -98,18 +100,18 @@ bool readOne(std::string recvd_str,std::string &read_str){
         return true;
     }
 
-//    if(aero){EEPROMデータ取得などは、チェックサムがついていない？
-//        //ヘッダを除いた部分のチェックサムを計算
-//        unsigned int checksum = recvd->ad;
-//         for (int idx = 0; idx < len; idx++) {
-//         checksum += (&recvd->data)[idx];
-//         }
-//         checksum = ~checksum;
-//         if (((uint8_t)checksum) != (&recvd->data)[len]) {
-//         //データを破棄
-//         return false;
-//         }
-//    }
+    if(aero){
+        //ヘッダを除いた部分のチェックサムを計算
+        unsigned int checksum = recvd->ad;
+         for (int idx = 0; idx < len; idx++) {
+         checksum += (&recvd->data)[idx];
+         }
+         checksum = ~checksum;
+         if (((uint8_t)checksum) != (&recvd->data)[len]) {
+         //データを破棄
+         return false;
+         }
+    }
 
     std::string ret(recvd_str,0, len + extra_len);
     read_str = ret;
@@ -138,6 +140,7 @@ void SerialCommunication::onReceive(const boost::system::error_code& _error, siz
         }
 
         while (1) {
+
             bool ok = readOne(rest_data, read_data);
 
             if (!ok) {
@@ -214,7 +217,14 @@ void SerialCommunication::readBuffer(std::vector<uint8_t>& _receive_data,const s
     } while ((receive_buffer_.empty() || !(header[0] == recvd->header[0] && header[1] == recvd->header[1])) && time < timeMax );
 
   if(receive_buffer_.size() < _length || !(header[0] == recvd->header[0] && header[1] == recvd->header[1])){
-    std::cerr << "Read Timeout BUFFER SIZE:"<<receive_buffer_.size() << ",LENGTH: " << (int)_length <<std::endl;
+    std::cerr << "\033[31m[Read Timeout] port:"<<port;
+    std::cerr <<" LENGTH : expect -> "<<(int)_length<<" actual -> "<<(int)receive_buffer_.size();
+    std::cerr <<" HEADER : expect -> "<<std::hex<<static_cast<int>(header[0])<<static_cast<int>(header[1]);
+    if(receive_buffer_.size() >2){
+    std::cerr <<" actual -> "<<std::hex<<static_cast<int>(recvd->header[0])<<static_cast<int>(recvd->header[1]);
+    }
+    std::cerr<<"\033[m"<<std::endl;
+
     comm_err_ = true;
     move_cmd_.resize(11);
     fill(move_cmd_.begin(),move_cmd_.end(),0);
