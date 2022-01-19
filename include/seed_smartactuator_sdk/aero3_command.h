@@ -105,7 +105,7 @@ namespace aero
       void setControllerCmd();
 
       void resetting();
-      void write_1byte(uint16_t _address, uint8_t *_write_data);
+      void write_1byte(uint16_t _address, uint8_t *_write_data, int write_size);
       void write_2byte(uint16_t _address, uint16_t *_write_data);
       std::vector<uint8_t> read_1byte(uint16_t _address);
       std::vector<uint8_t> read_2byte(uint16_t _address);

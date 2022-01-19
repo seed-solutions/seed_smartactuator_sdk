@@ -24,12 +24,12 @@ void AeroCommand::resetting()
 
 }
 
-void AeroCommand::write_1byte(uint16_t _address, uint8_t *_write_data)
+void AeroCommand::write_1byte(uint16_t _address, uint8_t *_write_data,int write_size)
 {
   std::vector<uint8_t> send_data;
   std::vector<uint8_t> receive_data;
 
-  length_ = 39;
+  length_ = write_size + 7;//(data + header(6byte) + terminal(1byte))
   send_data.resize(length_);
   fill(send_data.begin(),send_data.end(),0);
   receive_data.resize(length_ + 2);
@@ -37,16 +37,16 @@ void AeroCommand::write_1byte(uint16_t _address, uint8_t *_write_data)
 
   send_data[0] = 0xFC;    //Headder
   send_data[1] = 0xCF;    //Headder
-  send_data[2] = 35;      //Data Length
+  send_data[2] = write_size + 3; //Command~DataEnd
   send_data[3] = 0xFF;    //Command
   send_data[4] = _address >> 8;
   send_data[5] = _address;
 
-  send_data[length_-1] = 0xFF;  //checksum
 
-  for(int i = 0; i < 32; ++i){
+  for(int i = 0; i < write_size; ++i){
       send_data[6+i] = _write_data[i];
   }
+  send_data[length_-1] = 0xFF;  //terminal
 
   serial_com_.writeAsync(send_data);
 
