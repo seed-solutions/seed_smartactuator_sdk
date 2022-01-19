@@ -26,7 +26,7 @@ public:
    void enqueue(CosmoCmdReqType cmd) {
         std::lock_guard < std::mutex > lock(mtx);
         cosmo_cmds.push(cmd);
-        std::cout <<"enqueue -> cosmo size : " << cosmo_cmds.size() << std::endl;
+
 
         
     }
@@ -34,12 +34,10 @@ public:
    CosmoCmdReqType dequeue(){
         std::lock_guard<std::mutex> lock(mtx);
         if(cosmo_cmds.empty()){
-            std::cout << "dequeue -> cosmo cmd is empty" << std::endl;
             CosmoCmdReqType ret = {-1,-1,-1,-1,""};
             return ret;
         }
 
-        std::cout <<"dequeue -> cosmo size : " << cosmo_cmds.size() << std::endl;
         auto ret = cosmo_cmds.front();
         cosmo_cmds.pop();
         return ret;
