@@ -85,17 +85,17 @@ void AeroCommand::write_2byte(uint16_t _address, uint16_t *_write_data)
   serial_com_.readBuffer(receive_data,{0xCF,0xFC},receive_data.size());
 }
 
-std::vector<uint8_t> AeroCommand::read_1byte(uint16_t _address)
+std::vector<uint8_t> AeroCommand::read_1byte(uint16_t _address,int size)
 {
 
   std::vector<uint8_t> send_data;
-  std::vector<uint8_t> receive_data;
+  std::vector<uint8_t> receive_data_raw;
 
   length_ = 8;
   send_data.resize(length_);
   fill(send_data.begin(),send_data.end(),0);
-  receive_data.resize(38);
-  fill(receive_data.begin(),receive_data.end(),0);
+  receive_data_raw.resize(size+7);//data size + header(2) + len(1) + cmd(1)+address(2)+terminal(1)
+  fill(receive_data_raw.begin(),receive_data_raw.end(),0);
 
   send_data[0] = 0xFC;    //Headder
   send_data[1] = 0xCF;    //Headder
@@ -103,13 +103,15 @@ std::vector<uint8_t> AeroCommand::read_1byte(uint16_t _address)
   send_data[3] = 0x00;    //Command
   send_data[4] = _address >> 8;
   send_data[5] = _address;
-  send_data[6] = 0x20;   //read Data Length
+  send_data[6] = size;   //read Data Length
 
   send_data[length_-1] = 0xFF;  //checksum
 
   //serial_com_.clear_serial_port("input");
   serial_com_.writeAsync(send_data);
-  serial_com_.readBuffer(receive_data,{0xCF,0xFC},receive_data.size());
+  serial_com_.readBuffer(receive_data_raw,{0xCF,0xFC},receive_data_raw.size());
+
+  std::vector<uint8_t> receive_data{receive_data_raw.begin()+6,receive_data_raw.begin()+6+size};
 
   return receive_data;
 }
