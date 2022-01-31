@@ -99,7 +99,7 @@ bool readOne(std::string recvd_str,std::string &read_str){
         //データ未到達なだけかもしれないので、破棄しない
         return true;
     }
-
+/*実機接続時に関節角度取得に失敗したためコメントアウト
     if(aero){
         //ヘッダを除いた部分のチェックサムを計算
         unsigned int checksum = recvd->ad;
@@ -112,7 +112,7 @@ bool readOne(std::string recvd_str,std::string &read_str){
          return false;
          }
     }
-
+*/
     std::string ret(recvd_str,0, len + extra_len);
     read_str = ret;
 
