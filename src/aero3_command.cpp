@@ -219,13 +219,13 @@ void SerialCommunication::readBuffer(std::vector<uint8_t>& _receive_data,const s
     } while ((receive_buffer_.empty() || !(header[0] == recvd->header[0] && header[1] == recvd->header[1])) && time < timeMax );
 
   if(receive_buffer_.empty() || !(header[0] == recvd->header[0] && header[1] == recvd->header[1])){
-    //std::cerr << "\033[31m[Read Timeout] port:"<<port;
-    //std::cerr <<" LENGTH : expect -> "<<(int)_length<<" actual -> "<<(int)receive_buffer_.size();
-   // std::cerr <<" HEADER : expect -> "<<std::hex<<static_cast<int>(header[0])<<static_cast<int>(header[1]);
-    //if(receive_buffer_.size() >2){
-    //std::cerr <<" actual -> "<<std::hex<<static_cast<int>(recvd->header[0])<<static_cast<int>(recvd->header[1]);
-    //}
-    //std::cerr<<"\033[m"<<std::endl;
+    std::cerr << "\033[31m[Read Timeout] port:"<<port;
+    std::cerr <<" LENGTH : expect -> "<<(int)_length<<" actual -> "<<(int)receive_buffer_.size();
+    std::cerr <<" HEADER : expect -> "<<std::hex<<static_cast<int>(header[0])<<static_cast<int>(header[1]);
+    if(receive_buffer_.size() >2){
+    std::cerr <<" actual -> "<<std::hex<<static_cast<int>(recvd->header[0])<<static_cast<int>(recvd->header[1]);
+    }
+    std::cerr<<"\033[m"<<std::endl;
 
     comm_err_ = true;
     move_cmd_.resize(11);
