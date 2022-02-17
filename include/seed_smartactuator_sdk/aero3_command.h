@@ -8,6 +8,9 @@
 #include <unordered_map>
 #include <thread>
 #include "seed_smartactuator_sdk/cosmo_receiver.h"
+#include "seed_smartactuator_sdk/robot_status_receiver.h"
+
+#define IREX_2022
 
 using namespace boost::asio;
 
@@ -57,9 +60,10 @@ namespace aero
 
       bool comm_err_;
       bool is_move_ = false;
-      std::vector<uint8_t> cosmo_cmd_;
-      std::vector<uint8_t> move_cmd_;
+      std::vector<uint8_t> cosmo_cmd_;//バーチャルコントローラ用移動CosmCMD
+      std::vector<uint8_t> move_cmd_;//バーチャルコントローラ用移動CosmCMD
       CosmoCmdQueue cosmo_cmd_queue;
+      RobotStatusCmdQueue robot_status_cmd_queue;
       AeroBuff receive_buff;
       const int at_least_size = 8;
 
@@ -69,6 +73,7 @@ namespace aero
       serial_port serial_;
       deadline_timer timer_;
       CosmoReceiver cosmo_receiver_;
+      RobotStatusReceiver robot_status_receiver_;
       bool is_canceled_;
       boost::asio::streambuf stream_buffer_;
       std::string port;
@@ -83,8 +88,8 @@ namespace aero
 
       bool is_open_,comm_err_;
       bool is_move_ = false;
-      std::vector<uint8_t> cosmo_cmd_;
-      std::vector<uint8_t> move_cmd_;
+      std::vector<uint8_t> cosmo_cmd_;//バーチャルコントローラ用移動CosmCMD
+      std::vector<uint8_t> move_cmd_;//バーチャルコントローラ用移動CosmCMD
 
       bool openPort(std::string _port, unsigned int _baud_rate);
       void closePort();
@@ -141,7 +146,7 @@ namespace aero
             send_data_[2] = 0x08;
             break;
         case 16:
-            send_data_[2] = 0x10; //TODO 本当は0x16だけどなんか現状の仕様だと0x16ではMSが受け取らないっぽい？
+            send_data_[2] = 0x10;
             break;
         case 32:
             send_data_[2] = 0x20;
@@ -173,6 +178,42 @@ namespace aero
         serial_com_.flushPort();
         serial_com_.writeAsync(send_data_);
     }
+
+    RobotStatusCmdReqType getRobotStatusCmd(){
+        return serial_com_.robot_status_cmd_queue.dequeue();
+    }
+
+    void sendRobotStatusCmdResp(RobotStatusCmdRespType resp) {
+#ifndef IREX_2022
+        check_sum_ = 0;
+        length_ = 68;
+
+        send_robot_status_data_.resize(length_);
+        fill(send_robot_status_data_.begin(), send_robot_status_data_.end(), 0);
+        send_robot_status_data_[0] = 0xDF;
+        send_robot_status_data_[1] = 0xFD;
+        send_robot_status_data_[2] = 0x40; //64
+        send_robot_status_data_[3] = 0x61;
+        send_robot_status_data_[4] = 0x00;
+        send_robot_status_data_[5] = resp.msid;
+        strcpy((char*) &send_robot_status_data_[6], resp.cmd_str.c_str());
+        std::stringstream ss;
+        for (int i = 0; i < send_robot_status_data_.size(); i++) {
+            ss << "0x" << std::hex << static_cast<unsigned>(send_robot_status_data_[i]) << ", ";
+        }
+        std::cout << "send robot status data: " << ss.str() << std::endl;
+
+        //CheckSum
+        for (count_ = 2; count_ < length_ - 1; count_++)
+            check_sum_ += send_robot_status_data_[count_];
+        send_robot_status_data_[length_ - 1] = ~check_sum_;
+
+        serial_com_.flushPort();
+        serial_com_.writeAsync(send_robot_status_data_);
+#else
+#endif
+    }
+
     void moveCmdReset() {
         is_move_ = serial_com_.is_move_ = false;
         move_cmd_.clear();
@@ -183,6 +224,7 @@ namespace aero
       //Value
       unsigned int check_sum_,count_,length_,cosmo_length_;
       std::vector<uint8_t> send_data_;
+      std::vector<uint8_t> send_robot_status_data_;
       MsRecvRaw cosmo_data_;
 
     protected:

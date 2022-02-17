@@ -26,9 +26,6 @@ public:
    void enqueue(CosmoCmdReqType cmd) {
         std::lock_guard < std::mutex > lock(mtx);
         cosmo_cmds.push(cmd);
-
-
-        
     }
 
    CosmoCmdReqType dequeue(){

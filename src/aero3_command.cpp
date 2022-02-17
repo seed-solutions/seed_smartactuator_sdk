@@ -8,7 +8,7 @@ using namespace controller;
 
 ///////////////////////////////
 SerialCommunication::SerialCommunication()
-: io_(),serial_(io_),timer_(io_),is_canceled_(false),comm_err_(false),cosmo_receiver_(&cosmo_cmd_queue)
+: io_(),serial_(io_),timer_(io_),is_canceled_(false),comm_err_(false),cosmo_receiver_(&cosmo_cmd_queue),robot_status_receiver_(&robot_status_cmd_queue)
 {
 }
 
@@ -152,7 +152,7 @@ void SerialCommunication::onReceive(const boost::system::error_code& _error, siz
                 break;
             }
 
-            if (!cosmo_receiver_(read_data)) {
+            if (!cosmo_receiver_(read_data) && !robot_status_receiver_(read_data)) {
                 receive_buff.set(read_data);
             }
 
