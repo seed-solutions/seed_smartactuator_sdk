@@ -1,0 +1,19 @@
+name: ROS Prerelease Workflow
+on: [push, pull_request]
+jobs:
+  prerelease_job:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - ros_distro_name: melodic
+            arch: amd64
+          - ros_distro_name: noetic
+            arch: amd64
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v2
+      - uses: tork-a/ros-prerelease-job-action@main
+        with:
+          ros_distro_name: ${{ matrix.ros_distro_name }}
+          arch: ${{ matrix.arch }}
