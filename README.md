@@ -1,5 +1,7 @@
 # seed_smartactuator_sdk
 
+[![ROS Prerelease Workflow](https://github.com/seed_solutions/seed_smartactuator_sdk/actions/workflows/main.yaml/badge.svg)](https://github.com/seed_solutions/seed_smartactuator_sdk/actions/workflows/main.yaml)
+
 ## サンプルコード
 ROS上のパッケージから本ライブラリをインクルードし、SEED-Driverへコマンドを送信するための一連サンプルを示す。    
 本サンプルの概要は下記の通りである。
