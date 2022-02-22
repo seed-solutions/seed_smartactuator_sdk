@@ -16,7 +16,7 @@ jobs:
             arch: arm64
     continue-on-error: true
     steps:
-      - run: if [[ "$ARCH" == "arm"* ]]; then sudo apt update && sudo apt install -qy qemu-user-static; fi
+      - run: if [[ "${{ matrix.arch }}" == "arm"* ]]; then sudo apt update && sudo apt install -qy qemu-user-static; fi
       - uses: actions/checkout@v2
       - uses: tork-a/ros-prerelease-job-action@main
         with:
