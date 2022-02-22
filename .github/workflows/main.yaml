@@ -6,10 +6,18 @@ jobs:
     strategy:
       matrix:
         include:
+          - ros_distro_name: kinetic
+            arch: amd64
+          - ros_distro_name: kinetic
+            arch: arm64
           - ros_distro_name: melodic
             arch: amd64
+          - ros_distro_name: melodic
+            arch: arm64
           - ros_distro_name: noetic
             arch: amd64
+          - ros_distro_name: noetic
+            arch: arm64
     continue-on-error: true
     steps:
       - uses: actions/checkout@v2
