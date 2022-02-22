@@ -6,10 +6,6 @@ jobs:
     strategy:
       matrix:
         include:
-          - ros_distro_name: kinetic
-            arch: amd64
-          - ros_distro_name: kinetic
-            arch: arm64
           - ros_distro_name: melodic
             arch: amd64
           - ros_distro_name: melodic
@@ -20,6 +16,7 @@ jobs:
             arch: arm64
     continue-on-error: true
     steps:
+      - run: if [[ "$ARCH" == "arm"* ]]; then sudo apt update && sudo apt install -qy qemu-user-static; fi
       - uses: actions/checkout@v2
       - uses: tork-a/ros-prerelease-job-action@main
         with:
