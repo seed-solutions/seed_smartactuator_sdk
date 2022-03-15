@@ -9,6 +9,7 @@
 #include <thread>
 #include "seed_smartactuator_sdk/cosmo_receiver.h"
 #include "seed_smartactuator_sdk/robot_status_receiver.h"
+#include "seed_smartactuator_sdk/virtual_controller_receiver.h"
 
 #define IREX_2022
 
@@ -59,11 +60,9 @@ namespace aero
       void flushPort();
 
       bool comm_err_;
-      bool is_move_ = false;
-      std::vector<uint8_t> cosmo_cmd_;//バーチャルコントローラ用移動CosmCMD
-      std::vector<uint8_t> move_cmd_;//バーチャルコントローラ用移動CosmCMD
       CosmoCmdQueue cosmo_cmd_queue;
       RobotStatusCmdQueue robot_status_cmd_queue;
+      VirtualControllerCmdQueue virtual_controller_cmd_queue;
       AeroBuff receive_buff;
       const int at_least_size = 8;
 
@@ -74,6 +73,7 @@ namespace aero
       deadline_timer timer_;
       CosmoReceiver cosmo_receiver_;
       RobotStatusReceiver robot_status_receiver_;
+      VirtualControllerReceiver virtual_controller_receiver_;
       bool is_canceled_;
       boost::asio::streambuf stream_buffer_;
       std::string port;
@@ -87,9 +87,6 @@ namespace aero
       ~AeroCommand();
 
       bool is_open_,comm_err_;
-      bool is_move_ = false;
-      std::vector<uint8_t> cosmo_cmd_;//バーチャルコントローラ用移動CosmCMD
-      std::vector<uint8_t> move_cmd_;//バーチャルコントローラ用移動CosmCMD
 
       bool openPort(std::string _port, unsigned int _baud_rate);
       void closePort();
@@ -214,10 +211,8 @@ namespace aero
 #endif
     }
 
-    void moveCmdReset() {
-        is_move_ = serial_com_.is_move_ = false;
-        move_cmd_.clear();
-        serial_com_.move_cmd_.clear();
+    VirtualControllerCmdReqType getVirtualControllerCmd(){
+        return serial_com_.virtual_controller_cmd_queue.dequeue();
     }
 
     private:

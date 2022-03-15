@@ -8,7 +8,8 @@ using namespace controller;
 
 ///////////////////////////////
 SerialCommunication::SerialCommunication()
-: io_(),serial_(io_),timer_(io_),is_canceled_(false),comm_err_(false),cosmo_receiver_(&cosmo_cmd_queue),robot_status_receiver_(&robot_status_cmd_queue)
+: io_(),serial_(io_),timer_(io_),is_canceled_(false),comm_err_(false),cosmo_receiver_(&cosmo_cmd_queue)
+,robot_status_receiver_(&robot_status_cmd_queue),virtual_controller_receiver_(&virtual_controller_cmd_queue)
 {
 }
 
@@ -152,8 +153,9 @@ void SerialCommunication::onReceive(const boost::system::error_code& _error, siz
                 break;
             }
 
-            if (!cosmo_receiver_(read_data) && !robot_status_receiver_(read_data)) {
+            if (!cosmo_receiver_(read_data) && !robot_status_receiver_(read_data) && !virtual_controller_receiver_(read_data)) {
                 receive_buff.set(read_data);
+
             }
 
             //読み込み済みデータをバッファから破棄
@@ -228,14 +230,6 @@ void SerialCommunication::readBuffer(std::vector<uint8_t>& _receive_data,const s
     std::cerr<<"\033[m"<<std::endl;
 
     comm_err_ = true;
-    move_cmd_.resize(11);
-    fill(move_cmd_.begin(),move_cmd_.end(),0);
-    if(receive_buffer_.size() == 11){
-    	for(size_t i=0; i <receive_buffer_.size(); ++i){
-    		move_cmd_[i] = receive_buffer_[i];
-    	}
-    	is_move_ = true;
-    }
   }
   else{
     for(size_t i=0;i<_length;++i)_receive_data[i] = receive_buffer_[i];
@@ -614,7 +608,6 @@ std::vector<int16_t> AeroCommand::actuateByPosition(uint16_t _time, int16_t *_da
 
   serial_com_.readBuffer(receive_data,{0xDF,0xFD},receive_data.size());
   comm_err_ = serial_com_.comm_err_;
-  is_move_ = serial_com_.is_move_;
 
   std::vector<int16_t> parse_data;    //present position & robot status
   parse_data.resize(31);
@@ -696,40 +689,4 @@ void AeroCommand::runScript(uint8_t _number,uint16_t _data)
 
   serial_com_.flushPort();
   serial_com_.writeAsync(send_data_);
-}
-
-void AeroCommand::setControllerCmd()
-{
-	int length = 7;
-	int header_size = 4;
-	move_cmd_ = serial_com_.move_cmd_;
-	if(move_cmd_[0] != 0x00){
-		/*std::stringstream ss;
-		for (int i = 0; i < move_cmd_.size(); i++)
-		{
-			ss << "0x" << std::hex << static_cast<unsigned>(move_cmd_[i]) << ", ";
-		}
-		std::cout << "RECV COSMO data: " << ss.str() << std::endl;*/
-	}
-	else{
-		return;
-	}
-	cosmo_cmd_.resize(11);
-	fill(cosmo_cmd_.begin(),cosmo_cmd_.end(),0);
-	if(move_cmd_[0] == 0xFB &&  move_cmd_[1] == 0xBF){
-		cosmo_cmd_[0] = move_cmd_[0];
-		cosmo_cmd_[1] = move_cmd_[1];
-		cosmo_cmd_[2] = length;
-		cosmo_cmd_[3] = move_cmd_[3];
-		for(size_t i=0;i<length;++i) cosmo_cmd_[i+header_size] = move_cmd_[i+header_size];
-		/*std::stringstream ss1;
-		for (int i = 0; i < cosmo_cmd_.size(); i++)
-		{
-			ss1 << "0x" << std::hex << static_cast<unsigned>(cosmo_cmd_[i]) << ", ";
-		}
-		std::cout << "INPUT COSMO data: " << ss1.str() << std::endl;*/
-	}
-	else{
-		return;
-	}
 }

@@ -63,7 +63,7 @@ struct CosmoReceiver
             }
 
             std::string cmd_str = convert.str();
-            std::cout << "##################DEBUG: " << cmd_str << std::endl;
+            std::cout << "##################[cosmo_receiver:] RECIVED: " << cmd_str << std::endl;
 
             CosmoCmdReqType req;
             req.header_type = header;
