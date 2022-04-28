@@ -37,6 +37,7 @@ include_directories(  ${catkin_INCLUDE_DIRS})
 add_library(seed_smartactuator_sdk
   src/seed3_command.cpp
   src/aero3_command.cpp
+  src/aero3_config_command.cpp
   )
 target_link_libraries(seed_smartactuator_sdk ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 add_dependencies(seed_smartactuator_sdk ${catkin_EXPORTED_TARGETS})
